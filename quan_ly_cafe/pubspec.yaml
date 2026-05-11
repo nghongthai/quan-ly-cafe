@@ -1,0 +1,43 @@
+name: quan_ly_cafe
+description: "Ứng dụng quản lý quán cafe chuyên nghiệp."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0
+
+  cupertino_icons: ^1.0.8
+  # Thư viện icon mạng xã hội cho màn hình Đăng nhập
+  font_awesome_flutter: ^11.0.0
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+
+
+  # PHẦN QUAN TRỌNG: Khai báo thư mục chứa ảnh
+  # Bạn cần tạo thư mục có tên 'assets' ở cùng cấp với file pubspec.yaml này
+flutter:
+  uses-material-design: true
+  assets:
+     - assets/images/
+    # Nếu bạn có file cụ thể, có thể khai báo chi tiết:
+    # - assets/images/welcome_bg.png
+    # - assets/images/logo_cafe.png
+
+  # Nếu bạn muốn dùng font chữ giống Figma (ví dụ: Lexend hoặc Roboto)
+  # fonts:
+  #   - family: Lexend
+  #     fonts:
+  #       - asset: assets/fonts/Lexend-Regular.ttf
+  #       - asset: assets/fonts/Lexend-Bold.ttf
+  #         weight: 700
