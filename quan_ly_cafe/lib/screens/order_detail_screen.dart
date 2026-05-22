@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class OrderDetailScreen extends StatelessWidget {
   final dynamic order;
   const OrderDetailScreen({super.key, required this.order});
 
-  // Hàm định dạng tiền tệ
+  // Hàm định dạng tiền tệ Việt Nam
   String formatMoney(dynamic amount) {
     if (amount == null) return "0đ";
     try {
@@ -17,32 +18,62 @@ class OrderDetailScreen extends StatelessWidget {
     }
   }
 
-  // Hàm xử lý thanh toán
+  // --- HÀM XỬ LÝ THANH TOÁN (ĐÃ SỬA LỖI) ---
   Future<void> _handleCheckout(BuildContext context) async {
     try {
-      final response = await http.post(
-        Uri.parse("http://10.0.2.2:8000/api/order/checkout"),
-        body: {'table_id': order['table_id'].toString()},
+      // Hiện loading khi đang xử lý
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
+      final response = await http.post(
+        Uri.parse("http://10.0.2.2:8000/api/order/checkout"),
+        headers: {
+          "Content-Type": "application/json", // Bắt buộc để Laravel nhận diện JSON
+        },
+        body: jsonEncode({
+          'table_id': order['table_id'], // Gửi trực tiếp table_id
+        }),
+      );
+
+      // Đóng loading
+      if (context.mounted) Navigator.pop(context);
+
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Thanh toán thành công!")),
-        );
-        Navigator.pop(context); // Quay về sơ đồ bàn
+        final result = jsonDecode(response.body);
+        if (result['success'] == true) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Thanh toán thành công! Doanh thu đã cập nhật."),
+                backgroundColor: Colors.green,
+              ),
+            );
+            // Trả về giá trị true để màn hình danh sách bàn biết cần cập nhật lại
+            Navigator.pop(context, true);
+          }
+        }
+      } else {
+        throw Exception("Lỗi từ máy chủ: ${response.statusCode}");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Lỗi kết nối khi thanh toán")),
-      );
+      if (context.mounted) {
+        Navigator.pop(context); // Đóng loading nếu lỗi
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Lỗi thanh toán: $e"), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Dữ liệu từ API trả về có cấu trúc order_details nằm trong order
     List details = order['order_details'] ?? [];
-    String tableName = order['table'] != null ? order['table']['name'].toString() : "Bàn ${order['table_id']}";
+    String tableName = order['table'] != null
+        ? order['table']['name'].toString()
+        : "Bàn ${order['table_id']}";
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -65,11 +96,10 @@ class OrderDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Thông tin Bàn
                   Container(
                     padding: const EdgeInsets.all(15),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.05),
+                      color: Colors.brown.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -87,12 +117,10 @@ class OrderDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 30),
-
                   const Text("DANH SÁCH MÓN",
                       style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, letterSpacing: 1.1)),
                   const Divider(height: 30),
 
-                  // Hiển thị danh sách món
                   details.isEmpty
                       ? const Center(child: Text("Chưa có món nào được chọn"))
                       : ListView.builder(
@@ -102,24 +130,43 @@ class OrderDetailScreen extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final item = details[index];
                       String productName = item['product'] != null ? item['product']['name'] : "Sản phẩm";
+                      String productImage = item['product'] != null ? item['product']['image'] : "cafe_den.png";
+
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 20),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.asset(
+                                'assets/images/$productImage',
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  width: 50,
+                                  height: 50,
+                                  color: Colors.grey[200],
+                                  child: const Icon(Icons.coffee, color: Colors.brown),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 15),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(productName,
-                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                                   Text("Số lượng: x${item['quantity']}",
                                       style: const TextStyle(color: Colors.grey, fontSize: 13)),
                                 ],
                               ),
                             ),
-                            Text(formatMoney(double.parse(item['price'].toString()) * item['quantity']),
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text(
+                              formatMoney(double.parse(item['price'].toString()) * item['quantity']),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
                           ],
                         ),
                       );
@@ -127,14 +174,12 @@ class OrderDetailScreen extends StatelessWidget {
                   ),
 
                   const Divider(height: 40),
-
-                  // Tổng cộng
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text("TỔNG CỘNG", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       Text(formatMoney(order['total_amount']),
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue)),
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.redAccent)),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -142,22 +187,26 @@ class OrderDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-
-          // NÚT THANH TOÁN DƯỚI CÙNG
+          // --- NÚT THANH TOÁN ---
           Padding(
             padding: const EdgeInsets.all(20),
             child: SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: () => _handleCheckout(context),
+                onPressed: order['status'] == 'completed'
+                    ? null // Nếu đã thanh toán rồi thì khóa nút
+                    : () => _handleCheckout(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Colors.brown[600],
+                  disabledBackgroundColor: Colors.grey,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   elevation: 0,
                 ),
-                child: const Text("THANH TOÁN",
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(
+                    order['status'] == 'completed' ? "ĐÃ THANH TOÁN" : "THANH TOÁN",
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
+                ),
               ),
             ),
           ),

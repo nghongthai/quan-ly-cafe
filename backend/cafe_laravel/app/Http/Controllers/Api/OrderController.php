@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    // 1. Lấy danh sách món ăn cho Menu (Giới hạn 20 món để tối ưu)
+    // 1. Lấy danh sách món ăn cho Menu
     public function getProducts()
     {
-        $products = Product::limit(20)->get(); 
+        $products = Product::all(); // Lấy tất cả để tránh thiếu món trên Flutter
         return response()->json($products);
     }
 
@@ -56,6 +56,7 @@ class OrderController extends Controller
                 ['total_amount' => 0]
             );
 
+            // Cập nhật trạng thái bàn sang "Sử dụng" (1)
             Table::where('id', $request->table_id)->update(['status' => 1]);
 
             $product = Product::findOrFail($request->product_id);
@@ -130,7 +131,7 @@ class OrderController extends Controller
         });
     }
 
-    // 5. Thanh toán
+    // 5. Thanh toán (PHẦN QUAN TRỌNG NHẤT)
     public function checkout(Request $request)
     {
         $request->validate(['table_id' => 'required|exists:tables,id']);
@@ -140,15 +141,23 @@ class OrderController extends Controller
                           ->where('status', 'pending')->first();
 
             if ($order) {
-                $order->update(['status' => 'completed']);
+                // SỬA TẠI ĐÂY: Cập nhật status kèm theo thời gian hiện tại
+                // Để DashboardController dùng whereDate('updated_at', ...) tính được tiền
+                $order->update([
+                    'status' => 'completed',
+                    'updated_at' => now() 
+                ]);
+
+                // Trả bàn về trạng thái trống (0)
                 Table::where('id', $request->table_id)->update(['status' => 0]);
-                return response()->json(['success' => true, 'message' => 'Thanh toán xong']);
+
+                return response()->json(['success' => true, 'message' => 'Thanh toán hoàn tất']);
             }
             return response()->json(['success' => false, 'message' => 'Không tìm thấy đơn'], 404);
         });
     }
 
-    // 6. Lọc danh sách đơn hàng (Quan trọng: Sửa lỗi lọc không hiện đơn)
+    // 6. Lọc danh sách đơn hàng
     public function listOrders(Request $request)
     {
         $status = $request->input('status');
@@ -156,24 +165,22 @@ class OrderController extends Controller
         
         $query = Order::with(['table', 'orderDetails.product']);
 
-        // Chỉ lọc status nếu có truyền vào và khác 'all'
         if ($request->filled('status') && $status !== 'all') {
             $query->where('status', $status);
         }
 
-        // Lọc theo thời gian
         if ($request->filled('filter')) {
             if ($filter == 'today') {
-                $query->whereDate('created_at', date('Y-m-d')); 
+                $query->whereDate('updated_at', date('Y-m-d')); 
             } elseif ($filter == 'week') {
-                $query->whereBetween('created_at', [
+                $query->whereBetween('updated_at', [
                     now()->startOfWeek(), 
                     now()->endOfWeek()
                 ]); 
             }
         }
 
-        $orders = $query->orderBy('created_at', 'desc')->get();
+        $orders = $query->orderBy('updated_at', 'desc')->get();
 
         return response()->json([
             'success' => true, 
