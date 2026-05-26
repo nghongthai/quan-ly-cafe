@@ -11,14 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+       Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            // 1. Đổi email thành username để khớp với code Flutter
-            $table->string('username')->unique(); 
+            $table->string('email')->unique(); // Đã thêm cột email
             $table->string('password');
-            // 2. Thêm cột role để phân quyền Admin/Nhân viên
-            $table->string('role')->default('staff'); 
+            $table->string('role')->default('staff'); // Đã thêm cột role
             $table->rememberToken();
             $table->timestamps();
         });

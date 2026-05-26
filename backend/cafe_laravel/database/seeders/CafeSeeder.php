@@ -14,7 +14,7 @@ class CafeSeeder extends Seeder
 {
     public function run(): void
     {
-        // --- 0. Dọn dẹp dữ liệu cũ (Tùy chọn nhưng nên làm) ---
+        // --- 0. Dọn dẹp dữ liệu cũ ---
         // Tắt kiểm tra khóa ngoại để xóa sạch bảng mà không bị lỗi ràng buộc
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         User::truncate();
@@ -46,7 +46,7 @@ class CafeSeeder extends Seeder
         }
 
         // --- 4. Tạo 20 sản phẩm mẫu ---
-       $products = [
+        $products = [
             ['name' => 'Cafe Đen', 'price' => 20000, 'image' => 'cafe_den.png'],
             ['name' => 'Cafe Sữa', 'price' => 25000, 'image' => 'cafe_sữa.png'],
             ['name' => 'Bạc Xỉu', 'price' => 30000, 'image' => 'Bạc_xiu.png'],
@@ -76,45 +76,51 @@ class CafeSeeder extends Seeder
         // --- 5. Thêm tài khoản Admin mẫu ---
         User::create([
             'name' => 'Quản trị viên',
-            'username' => 'admin',
+            'email' => 'admin@gmail.com', // Đã sửa username thành email
             'password' => Hash::make('123456'),
             'role' => 'admin',
+            'shift' => 'Toàn thời gian',
         ]);
 
         // --- 6. Thêm tài khoản Nhân viên mẫu ---
         User::create([
             'name' => 'Nhân viên A',
-            'username' => 'staff1',
+            'email' => 'staff1@gmail.com', // Đã sửa username thành email
             'password' => Hash::make('123456'),
             'role' => 'staff',
+            'shift' => 'Ca Sáng (06:00 - 12:00)',
         ]);
+
         User::create([
-        'name' => 'Nguyễn Văn Anh',
-        'username' => 'anhnv',
-        'password' => Hash::make('123456'),
-        'role' => 'Thu ngân',
-    ]);
+            'name' => 'Nguyễn Văn Anh',
+            'email' => 'anhnv@gmail.com', // Đã sửa username thành email
+            'password' => Hash::make('123456'),
+            'role' => 'Thu ngân',
+            'shift' => 'Ca Sáng (06:00 - 12:00)',
+        ]);
 
-    User::create([
-        'name' => 'Lê Thị Bình',
-        'username' => 'binhlt',
-        'password' => Hash::make('123456'),
-        'role' => 'Phục vụ',
-    ]);
+        User::create([
+            'name' => 'Lê Thị Bình',
+            'email' => 'binhlt@gmail.com', // Đã sửa username thành email
+            'password' => Hash::make('123456'),
+            'role' => 'Phục vụ',
+            'shift' => 'Ca Chiều (12:00 - 18:00)',
+        ]);
 
-    User::create([
-        'name' => 'Trần Văn Cường',
-        'username' => 'cuongtv',
-        'password' => Hash::make('123456'),
-        'role' => 'Pha chế',
-    ]);
+        User::create([
+            'name' => 'Trần Văn Cường',
+            'email' => 'cuongtv@gmail.com', // Đã sửa username thành email
+            'password' => Hash::make('123456'),
+            'role' => 'Pha chế',
+            'shift' => 'Ca Chiều (12:00 - 18:00)',
+        ]);
 
-    User::create([
-        'name' => 'Phạm Minh Đức',
-        'username' => 'ducpm',
-        'password' => Hash::make('123456'),
-        'role' => 'Phục vụ',
-    ]);
-
+        User::create([
+            'name' => 'Phạm Minh Đức',
+            'email' => 'ducpm@gmail.com', // Đã sửa username thành email
+            'password' => Hash::make('123456'),
+            'role' => 'Phục vụ',
+            'shift' => 'Ca Tối (18:00 - 23:00)',
+        ]);
     }
 }
