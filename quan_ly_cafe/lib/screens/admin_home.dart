@@ -16,13 +16,21 @@ class AdminHomeScreen extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          title: Text(featureName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Text(
+            featureName,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           content: const Text("Tính năng này đang được cập nhật."),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Đóng", style: TextStyle(color: Color(0xFF3B67D9))),
+              child: const Text(
+                "Đóng",
+                style: TextStyle(color: Color(0xFF3B67D9)),
+              ),
             ),
           ],
         );
@@ -48,7 +56,9 @@ class AdminHomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 60, left: 20, bottom: 20),
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade200),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,12 +66,19 @@ class AdminHomeScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 35,
                       backgroundColor: Colors.grey.shade300,
-                      child: const Icon(Icons.person, size: 50, color: Colors.white),
+                      child: const Icon(
+                        Icons.person,
+                        size: 50,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(height: 15),
                     const Text(
                       "Chủ Quán",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 5),
                     GestureDetector(
@@ -69,7 +86,9 @@ class AdminHomeScreen extends StatelessWidget {
                         Navigator.pop(context);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileScreen(),
+                          ),
                         );
                       },
                       child: const Text(
@@ -97,7 +116,9 @@ class AdminHomeScreen extends StatelessWidget {
                         Navigator.pop(context);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const RoomManagementScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const RoomManagementScreen(),
+                          ),
                         );
                       },
                     ),
@@ -108,7 +129,9 @@ class AdminHomeScreen extends StatelessWidget {
                         Navigator.pop(context);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const OrderListScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const OrderListScreen(),
+                          ),
                         );
                       },
                     ),
@@ -127,7 +150,9 @@ class AdminHomeScreen extends StatelessWidget {
                         Navigator.pop(context);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) =>  OrderHistoryScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => OrderHistoryScreen(),
+                          ),
                         );
                       },
                     ),
@@ -138,7 +163,9 @@ class AdminHomeScreen extends StatelessWidget {
                         Navigator.pop(context);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const StaffManagementScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const StaffManagementScreen(),
+                          ),
                         );
                       },
                     ),
@@ -167,8 +194,10 @@ class AdminHomeScreen extends StatelessWidget {
                         Navigator.pop(context);
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-                              (route) => false,
+                          MaterialPageRoute(
+                            builder: (context) => const WelcomeScreen(),
+                          ),
+                          (route) => false,
                         );
                       },
                     ),
@@ -183,7 +212,11 @@ class AdminHomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           "Tổng quan doanh thu",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -209,38 +242,82 @@ class AdminHomeScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Row(
               children: [
-                Expanded(child: _buildSmallCard("Số đơn hàng", "120", Icons.shopping_bag_outlined, Colors.green)),
+                Expanded(
+                  child: _buildSmallCard(
+                    "Số đơn hàng",
+                    "120",
+                    Icons.shopping_bag_outlined,
+                    Colors.green,
+                  ),
+                ),
                 const SizedBox(width: 15),
-                Expanded(child: _buildSmallCard("Phòng bàn", "5/15", Icons.table_restaurant, Colors.orange)),
+                Expanded(
+                  child: _buildSmallCard(
+                    "Phòng bàn",
+                    "5/15",
+                    Icons.table_restaurant,
+                    Colors.orange,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 30),
 
-            const Text("Sản phẩm bán chạy", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            const Text(
+              "Sản phẩm bán chạy",
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 15),
 
             // Danh sách sản phẩm viết cứng ban đầu
-            _buildProductItem("Nước cam", "Đã bán: 50", Colors.orange[50]!, Colors.orange),
-            _buildProductItem("Cà phê sữa", "Đã bán: 45", Colors.blue[50]!, Colors.blue),
-            _buildProductItem("Trà đào", "Đã bán: 30", Colors.purple[50]!, Colors.purple),
+            _buildProductItem(
+              "Nước cam",
+              "Đã bán: 50",
+              Colors.orange[50]!,
+              Colors.orange,
+            ),
+            _buildProductItem(
+              "Cà phê sữa",
+              "Đã bán: 45",
+              Colors.blue[50]!,
+              Colors.blue,
+            ),
+            _buildProductItem(
+              "Trà đào",
+              "Đã bán: 30",
+              Colors.purple[50]!,
+              Colors.purple,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String title, {required VoidCallback onTap, bool isSelected = false, bool isLogout = false}) {
+  Widget _buildMenuItem(
+    IconData icon,
+    String title, {
+    required VoidCallback onTap,
+    bool isSelected = false,
+    bool isLogout = false,
+  }) {
     return ListTile(
-        leading: Icon(icon, color: isLogout ? Colors.red : (isSelected ? Colors.black : Colors.black87), size: 22),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isLogout ? Colors.red : Colors.black87,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 15,
-          ),
+      leading: Icon(
+        icon,
+        color: isLogout
+            ? Colors.red
+            : (isSelected ? Colors.black : Colors.black87),
+        size: 22,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isLogout ? Colors.red : Colors.black87,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 15,
         ),
-        onTap: onTap;
+      ),
+      onTap: onTap,
     );
   }
 
@@ -249,28 +326,43 @@ class AdminHomeScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF3B67D9), Color(0xFF5E81F4)]),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF3B67D9), Color(0xFF5E81F4)],
+        ),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Tổng thu nhập", style: TextStyle(color: Colors.white70, fontSize: 14)),
+          const Text(
+            "Tổng thu nhập",
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
           const SizedBox(height: 8),
           const Text(
             "15.000.000 đ",
-            style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 15),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.trending_up, color: Colors.white, size: 16),
                 SizedBox(width: 5),
-                Text("Tăng trưởng: 12.5%", style: TextStyle(color: Colors.white, fontSize: 12)),
+                Text(
+                  "Tăng trưởng: 12.5%",
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -279,7 +371,12 @@ class AdminHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSmallCard(String title, String value, IconData icon, Color color) {
+  Widget _buildSmallCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -294,26 +391,39 @@ class AdminHomeScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildProductItem(String name, String sold, Color bgColor, Color iconColor) {
+  Widget _buildProductItem(
+    String name,
+    String sold,
+    Color bgColor,
+    Color iconColor,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5)]
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Icon(Icons.coffee_outlined, color: iconColor),
           ),
           const SizedBox(width: 15),
@@ -321,8 +431,17 @@ class AdminHomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text(sold, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  sold,
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                ),
               ],
             ),
           ),
