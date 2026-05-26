@@ -36,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: {
-          'username': _usernameController.text,
+          'email': _usernameController.text, // Chỉ sửa chữ 'username' thành 'email' ở đây
           'password': _passwordController.text,
         },
       );

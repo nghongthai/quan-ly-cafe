@@ -13,11 +13,10 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
-        'username', 
+        'email',    // Sắp xếp lại và giữ 'email' làm trường chính
         'password',
         'role',
-        'phone', // Mới thêm
-        'email', // Mới thêm
+        'phone',    // Mới thêm
         'shift',
     ];
 

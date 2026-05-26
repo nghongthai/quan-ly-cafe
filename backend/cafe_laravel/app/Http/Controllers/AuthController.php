@@ -11,17 +11,17 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     /**
-     * Xử lý Đăng nhập (Khớp với màn hình 2 trong image_7578f7.png)
+     * Xử lý Đăng nhập (Đã sửa từ username thành email để hết lỗi SQL)
      */
     public function login(Request $request)
     {
-        // 1. Kiểm tra dữ liệu đầu vào
+        // 1. Kiểm tra dữ liệu đầu vào (Sửa thành email)
         $request->validate([
-            'username' => 'required',
+            'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        $credentials = $request->only('username', 'password');
+        $credentials = $request->only('email', 'password');
 
         // 2. Thực hiện đăng nhập
         if (Auth::attempt($credentials)) {
@@ -34,7 +34,7 @@ class AuthController extends Controller
                 'data' => [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'username' => $user->username,
+                    'email' => $user->email, // Trả về email thay vì username
                     'role' => $user->role, 
                 ]
             ], 200);
@@ -48,21 +48,21 @@ class AuthController extends Controller
     }
 
     /**
-     * Xử lý Đăng ký (Khớp với màn hình 1 trong image_7578f7.png)
+     * Xử lý Đăng ký (Đã sửa từ username thành email)
      */
     public function register(Request $request)
     {
         // Kiểm tra dữ liệu đăng ký
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users',
+            'email' => 'required|string|email|max:255|unique:users', // Sửa ở đây
             'password' => 'required|string|min:6',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Dữ liệu không hợp lệ hoặc username đã tồn tại',
+                'message' => 'Dữ liệu không hợp lệ hoặc email đã tồn tại',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -70,7 +70,7 @@ class AuthController extends Controller
         // Tạo User mới
         $user = User::create([
             'name' => $request->name,
-            'username' => $request->username,
+            'email' => $request->email, // Lưu vào cột email
             'password' => Hash::make($request->password),
             'role' => 'staff', // Mặc định đăng ký mới là nhân viên
         ]);

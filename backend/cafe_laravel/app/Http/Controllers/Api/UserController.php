@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -25,31 +26,37 @@ class UserController extends Controller
         }
         return response()->json(['success' => false, 'message' => 'Không tìm thấy'], 404);
     }
+
+    // Thêm mới nhân viên / Quản trị viên
     public function store(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'username' => 'required|string|unique:users,username',
-        'password' => 'required|string|min:6',
-        'role' => 'required|string'
-    ]);
+    {
+        // ✅ Đã sửa validate từ 'username' thành 'email' để khớp với DB
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'role' => 'required|string'
+        ]);
 
-    $user = User::create([
-        'name' => $request->name,
-        'username' => $request->username,
-        'password' => bcrypt($request->password),
-        'role' => $request->role,
-    ]);
-    
+        // ✅ Tạo user với trường 'email'
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password), // Dùng Hash::make đồng bộ với Seeder
+            'role' => $request->role,
+            'shift' => $request->shift ?? 'Chưa xếp ca', // Thêm trường ca làm việc dự phòng
+        ]);
 
-    return response()->json(['success' => true, 'data' => $user], 201);
-}
-public function show($id)
-{
-    $user = User::find($id);
-    if ($user) {
-        return response()->json($user);
+        return response()->json(['success' => true, 'data' => $user], 201);
     }
-    return response()->json(['message' => 'Không tìm thấy'], 404);
-}
+
+    // Xem chi tiết 1 nhân viên
+    public function show($id)
+    {
+        $user = User::find($id);
+        if ($user) {
+            return response()->json($user);
+        }
+        return response()->json(['message' => 'Không tìm thấy'], 404);
+    }
 }
