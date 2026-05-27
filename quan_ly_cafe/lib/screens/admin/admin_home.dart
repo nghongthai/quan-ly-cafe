@@ -9,6 +9,7 @@ import 'package:quan_ly_cafe/screens/profile_screen.dart';
 import '../room_management.dart';
 import '../order_list_screen.dart';
 import '../staff_management_screen.dart';
+import '../role_management_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -143,7 +144,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       MaterialPageRoute(builder: (context) => const StaffManagementScreen()),
                     );
                   }),
-                  _buildMenuItem(Icons.admin_panel_settings_outlined, "Vai trò"),
+                  _buildMenuItem(Icons.security, ' vai trò', onTap: () {
+                    Navigator.pop(context); // Đóng Drawer
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const RoleManagementScreen())
+                    );
+                  }),
                   _buildMenuItem(Icons.lock_reset, "Đổi mật khẩu"),
                   const Divider(),
                   _buildMenuItem(Icons.logout, "Đăng xuất", color: Colors.red, onTap: () {

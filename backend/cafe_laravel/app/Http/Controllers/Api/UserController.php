@@ -49,6 +49,28 @@ class UserController extends Controller
 
         return response()->json(['success' => true, 'data' => $user], 201);
     }
+    public function update(Request $request, $id)
+{
+    // Tìm nhân viên theo ID
+    $user = \App\Models\User::find($id); // Hoặc Model tương ứng của bạn (ví dụ: User)
+
+    if (!$user) {
+        return response()->json(['message' => 'Không tìm thấy nhân viên'], 404);
+    }
+
+    // Cập nhật vai trò mới từ Flutter gửi lên
+    if ($request->has('role')) {
+        $user->role = $request->input('role');
+    }
+
+    // Nếu Flutter có gửi thêm các thông tin khác muốn sửa thì bổ sung ở đây
+    $user->save(); 
+
+    return response()->json([
+        'message' => 'Cập nhật vai trò thành công',
+        'data' => $user
+    ], 200);
+}
 
     // Xem chi tiết 1 nhân viên
     public function show($id)

@@ -17,6 +17,7 @@ Route::post('/logout', [AuthController::class, 'logout']);
 Route::get('/users', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
+Route::post('/users/{id}', [UserController::class, 'update']);
 
 // --- 3. TABLES (Quản lý bàn) ---
 Route::get('/tables', function() { 

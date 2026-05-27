@@ -3,7 +3,7 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart'; // Thêm import này
 import 'screens/admin/admin_home.dart'; // Thêm import này
 import 'screens/welcome_screen.dart';
-import 'package:quan_ly_cafe/screens/staff/table_map_screen.dart';
+//import 'package:quan_ly_cafe/screens/staff/table_map_screen.dart';
 
 void main() {
   runApp(const CafeApp());
