@@ -14,7 +14,7 @@ class CafeSeeder extends Seeder
 {
     public function run(): void
     {
-        // --- 0. Dọn dẹp dữ liệu cũ (Tùy chọn nhưng nên làm) ---
+        // --- 0. Dọn dẹp dữ liệu cũ ---
         // Tắt kiểm tra khóa ngoại để xóa sạch bảng mà không bị lỗi ràng buộc
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         User::truncate();
@@ -47,26 +47,26 @@ class CafeSeeder extends Seeder
 
         // --- 4. Tạo 20 sản phẩm mẫu ---
         $products = [
-            ['name' => 'Cafe Đen', 'price' => 20000],
-            ['name' => 'Cafe Sữa', 'price' => 25000],
-            ['name' => 'Bạc Xỉu', 'price' => 30000],
-            ['name' => 'Cafe Muối', 'price' => 35000],
-            ['name' => 'Trà Đào Cam Sả', 'price' => 45000],
-            ['name' => 'Trà Vải', 'price' => 40000],
-            ['name' => 'Trà Dâu', 'price' => 38000],
-            ['name' => 'Nước Cam', 'price' => 40000],
-            ['name' => 'Nước Ép Dưa Hấu', 'price' => 35000],
-            ['name' => 'Sinh Tố Bơ', 'price' => 50000],
-            ['name' => 'Sinh Tố Xoài', 'price' => 45000],
-            ['name' => 'Sữa Chua Trân Châu', 'price' => 35000],
-            ['name' => 'Matcha Latte', 'price' => 45000],
-            ['name' => 'Chocolate Đá Xay', 'price' => 55000],
-            ['name' => 'Soda Chanh', 'price' => 30000],
-            ['name' => 'Soda Việt Quất', 'price' => 35000],
-            ['name' => 'Trà Sữa Truyền Thống', 'price' => 30000],
-            ['name' => 'Trà Sữa Thái Xanh', 'price' => 30000],
-            ['name' => 'Hồng Trà Sữa', 'price' => 35000],
-            ['name' => 'Trà Oolong Kem Phô Mai', 'price' => 50000],
+            ['name' => 'Cafe Đen', 'price' => 20000, 'image' => 'cafe_den.png'],
+            ['name' => 'Cafe Sữa', 'price' => 25000, 'image' => 'cafe_sữa.png'],
+            ['name' => 'Bạc Xỉu', 'price' => 30000, 'image' => 'Bạc_xiu.png'],
+            ['name' => 'Cafe Muối', 'price' => 35000, 'image' => 'cafe_muối.png'],
+            ['name' => 'Trà Đào Cam Sả', 'price' => 45000, 'image' => 'Trà_dao_cam_sả.png'],
+            ['name' => 'Trà Vải', 'price' => 40000, 'image' => 'Trà_vải.png'],
+            ['name' => 'Trà Dâu', 'price' => 38000, 'image' => 'Trà_dau.png'],
+            ['name' => 'Nước Cam', 'price' => 40000, 'image' => 'Nước_cam.png'],
+            ['name' => 'Nước Ép Dưa Hấu', 'price' => 35000, 'image' => 'Ép_dưa_hấu.png'],
+            ['name' => 'Sinh Tố Bơ', 'price' => 50000, 'image' => 'Sinh_tố_bơ.png'],
+            ['name' => 'Sinh Tố Xoài', 'price' => 45000, 'image' => 'Sinh_tố_xoài.png'],
+            ['name' => 'Sữa Chua Trân Châu', 'price' => 35000, 'image' => 'Sữachua_trân_châu.png'],
+            ['name' => 'Matcha Latte', 'price' => 45000, 'image' => 'Matchalate.png'],
+            ['name' => 'Chocolate Đá Xay', 'price' => 55000, 'image' => 'Chocolate_đá_xay.png'],
+            ['name' => 'Soda Chanh', 'price' => 30000, 'image' => 'So_đa_chanh.png'],
+            ['name' => 'Soda Việt Quất', 'price' => 35000, 'image' => 'Soda_việt_quất.png'],
+            ['name' => 'Trà Sữa Truyền Thống', 'price' => 30000, 'image' => 'Trà sữa truyền thống.png'],
+            ['name' => 'Trà Thái Xanh', 'price' => 30000, 'image' => 'Trà thái xanh.png'],
+            ['name' => 'Hồng Trà Sữa', 'price' => 35000, 'image' => 'Hồng trà sữa.png'],
+            ['name' => 'Trà Oolong Kem Phô Mai', 'price' => 50000, 'image' => 'Trà ôlong kem ô mai.png'],
         ];
 
         foreach ($products as $product) {
@@ -76,45 +76,51 @@ class CafeSeeder extends Seeder
         // --- 5. Thêm tài khoản Admin mẫu ---
         User::create([
             'name' => 'Quản trị viên',
-            'username' => 'admin',
+            'email' => 'admin@gmail.com', // Đã sửa username thành email
             'password' => Hash::make('123456'),
             'role' => 'admin',
+            'shift' => 'Toàn thời gian',
         ]);
 
         // --- 6. Thêm tài khoản Nhân viên mẫu ---
         User::create([
             'name' => 'Nhân viên A',
-            'username' => 'staff1',
+            'email' => 'staff1@gmail.com', // Đã sửa username thành email
             'password' => Hash::make('123456'),
             'role' => 'staff',
+            'shift' => 'Ca Sáng (06:00 - 12:00)',
         ]);
+
         User::create([
-        'name' => 'Nguyễn Văn Anh',
-        'username' => 'anhnv',
-        'password' => Hash::make('123456'),
-        'role' => 'Thu ngân',
-    ]);
+            'name' => 'Nguyễn Văn Anh',
+            'email' => 'anhnv@gmail.com', // Đã sửa username thành email
+            'password' => Hash::make('123456'),
+            'role' => 'Thu ngân',
+            'shift' => 'Ca Sáng (06:00 - 12:00)',
+        ]);
 
-    User::create([
-        'name' => 'Lê Thị Bình',
-        'username' => 'binhlt',
-        'password' => Hash::make('123456'),
-        'role' => 'Phục vụ',
-    ]);
+        User::create([
+            'name' => 'Lê Thị Bình',
+            'email' => 'binhlt@gmail.com', // Đã sửa username thành email
+            'password' => Hash::make('123456'),
+            'role' => 'Phục vụ',
+            'shift' => 'Ca Chiều (12:00 - 18:00)',
+        ]);
 
-    User::create([
-        'name' => 'Trần Văn Cường',
-        'username' => 'cuongtv',
-        'password' => Hash::make('123456'),
-        'role' => 'Pha chế',
-    ]);
+        User::create([
+            'name' => 'Trần Văn Cường',
+            'email' => 'cuongtv@gmail.com', // Đã sửa username thành email
+            'password' => Hash::make('123456'),
+            'role' => 'Pha chế',
+            'shift' => 'Ca Chiều (12:00 - 18:00)',
+        ]);
 
-    User::create([
-        'name' => 'Phạm Minh Đức',
-        'username' => 'ducpm',
-        'password' => Hash::make('123456'),
-        'role' => 'Phục vụ',
-    ]);
-
+        User::create([
+            'name' => 'Phạm Minh Đức',
+            'email' => 'ducpm@gmail.com', // Đã sửa username thành email
+            'password' => Hash::make('123456'),
+            'role' => 'Phục vụ',
+            'shift' => 'Ca Tối (18:00 - 23:00)',
+        ]);
     }
 }

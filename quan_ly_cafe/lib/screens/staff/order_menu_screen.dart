@@ -32,7 +32,7 @@ class _OrderMenuScreenState extends State<OrderMenuScreen> {
     if (result.length > 3) {
       result = result.replaceAllMapped(
         RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]},',
+        (Match m) => '${m[1]},',
       );
     }
     return result;
@@ -137,16 +137,16 @@ class _OrderMenuScreenState extends State<OrderMenuScreen> {
                 ElevatedButton(
                   onPressed: totalItems > 0
                       ? () {
-                    // 🌟 BƯỚC 2: GỌI HÀM CẬP NHẬT TRẠNG THÁI BÀN
-                    // Cập nhật bàn thành 'isUsed = true' và gán tổng tiền
-                    phucVuBan(
-                      widget.tableName,
-                      '${formatCurrency(totalAmount)}đ',
-                    );
+                          // 🌟 BƯỚC 2: GỌI HÀM CẬP NHẬT TRẠNG THÁI BÀN
+                          // Cập nhật bàn thành 'isUsed = true' và gán tổng tiền
+                          phucVuBan(
+                            widget.tableName,
+                            '${formatCurrency(totalAmount)}đ',
+                          );
 
-                    // Quay trở về màn hình Sơ đồ bàn (Bàn lúc này sẽ chuyển sang màu xanh)
-                    Navigator.pop(context);
-                  }
+                          // Quay trở về màn hình Sơ đồ bàn (Bàn lúc này sẽ chuyển sang màu xanh)
+                          Navigator.pop(context);
+                        }
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1A237E),

@@ -4,7 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\UserController; 
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\DashboardController;
 use App\Models\Table;
 
 // --- 1. AUTHENTICATION ---
@@ -16,6 +17,7 @@ Route::post('/logout', [AuthController::class, 'logout']);
 Route::get('/users', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
+Route::post('/users/{id}', [UserController::class, 'update']);
 
 // --- 3. TABLES (Quản lý bàn) ---
 Route::get('/tables', function() { 
@@ -48,3 +50,4 @@ Route::post('/order/add-product', [OrderController::class, 'addProduct']);
 Route::post('/order/checkout', [OrderController::class, 'checkout']); 
 Route::post('/order/update-item', [OrderController::class, 'updateOrderDetail']);
 Route::get('/me/{id}', [UserController::class, 'show']);
+Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);

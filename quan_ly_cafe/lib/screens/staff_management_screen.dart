@@ -54,11 +54,11 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     }
   }
 
-  // 3. Thêm nhân viên mới (Đã thêm LOG để kiểm tra lỗi)
-  Future<void> addStaff(String name, String username, String password, String role) async {
+  // 3. Thêm nhân viên mới (ĐÃ ĐỔI TỪ USERNAME SANG EMAIL)
+  Future<void> addStaff(String name, String email, String password, String role) async {
     try {
       print("--- Đang gửi yêu cầu lưu nhân viên ---");
-      print("Dữ liệu: Name: $name, User: $username, Role: $role");
+      print("Dữ liệu: Name: $name, Email: $email, Role: $role");
 
       final response = await http.post(
         Uri.parse(apiUrl),
@@ -67,13 +67,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         },
         body: {
           'name': name,
-          'username': username,
+          'email': email, // 🌟 ĐÃ ĐỔI THÀNH KEY 'email' ĐỂ KHỚP VỚI LARAVEL
           'password': password,
           'role': role,
         },
       );
 
-      // KIỂM TRA LỖI TẠI ĐÂY (Xem trong Debug Console của VS Code)
       print("Mã trạng thái trả về: ${response.statusCode}");
       print("Nội dung phản hồi: ${response.body}");
 
@@ -86,7 +85,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
             const SnackBar(content: Text("Thêm nhân viên thành công!"))
         );
       } else {
-        print("LƯU THẤT BẠI. Kiểm tra lại Route hoặc dữ liệu trùng.");
+        print("LƯU THẤT BẠI. Kiểm tra lại trùng Email hoặc validate ở Laravel.");
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text("Lỗi ${response.statusCode}: Không thể lưu dữ liệu!"))
@@ -98,11 +97,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     }
   }
 
-  // Hàm hiển thị Dialog thêm nhân viên
+  // Hàm hiển thị Dialog thêm nhân viên (ĐÃ ĐỔI SANG GIAO DIỆN EMAIL)
   void _showAddStaffDialog() {
     final nameController = TextEditingController();
-    final userController = TextEditingController();
+    final emailController = TextEditingController(); // Đổi tên từ userController thành emailController
     final passController = TextEditingController();
+    final formKey = GlobalKey<FormState>(); // Thêm key để validate định dạng trực tiếp dưới giao diện
     String selectedRole = 'Phục vụ';
 
     showDialog(
@@ -110,22 +110,50 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       builder: (context) => AlertDialog(
         title: const Text("Thêm nhân viên mới", style: TextStyle(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nameController, decoration: const InputDecoration(labelText: "Họ và tên")),
-              TextField(controller: userController, decoration: const InputDecoration(labelText: "Tên đăng nhập")),
-              TextField(controller: passController, decoration: const InputDecoration(labelText: "Mật khẩu"), obscureText: true),
-              const SizedBox(height: 15),
-              DropdownButtonFormField<String>(
-                value: selectedRole,
-                decoration: const InputDecoration(labelText: "Vai trò/Chức vụ", border: OutlineInputBorder()),
-                items: ['Thu ngân', 'Phục vụ', 'Pha chế'].map((role) {
-                  return DropdownMenuItem(value: role, child: Text(role));
-                }).toList(),
-                onChanged: (val) => selectedRole = val!,
-              ),
-            ],
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: "Họ và tên"),
+                  validator: (value) => value!.isEmpty ? "Vui lòng nhập họ tên" : null,
+                ),
+                const SizedBox(height: 5),
+                TextFormField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress, // 🌟 Hiện bàn phím điện thoại có sẵn nút @
+                  decoration: const InputDecoration(
+                    labelText: "Địa chỉ Email",
+
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return "Vui lòng nhập email";
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      return "Email không đúng định dạng (thiếu @...)";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 5),
+                TextFormField(
+                  controller: passController,
+                  decoration: const InputDecoration(labelText: "Mật khẩu"),
+                  obscureText: true,
+                  validator: (value) => value!.length < 6 ? "Mật khẩu phải từ 6 ký tự" : null,
+                ),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  value: selectedRole,
+                  decoration: const InputDecoration(labelText: "Vai trò/Chức vụ", border: OutlineInputBorder()),
+                  items: ['Thu ngân', 'Phục vụ', 'Pha chế'].map((role) {
+                    return DropdownMenuItem(value: role, child: Text(role));
+                  }).toList(),
+                  onChanged: (val) => selectedRole = val!,
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -133,10 +161,11 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             onPressed: () {
-              if (nameController.text.isNotEmpty && userController.text.isNotEmpty && passController.text.isNotEmpty) {
-                addStaff(nameController.text, userController.text, passController.text, selectedRole);
+              // Kiểm tra xem dữ liệu nhập vào form đã chuẩn cấu trúc email chưa trước khi gửi API
+              if (formKey.currentState!.validate()) {
+                addStaff(nameController.text, emailController.text, passController.text, selectedRole);
               } else {
-                print("Vui lòng nhập đầy đủ thông tin!");
+                print("Dữ liệu nhập form chưa hợp lệ!");
               }
             },
             child: const Text("Lưu Nhân Viên", style: TextStyle(color: Colors.white)),

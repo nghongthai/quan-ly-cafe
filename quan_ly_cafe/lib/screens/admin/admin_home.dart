@@ -1,14 +1,63 @@
 import 'package:flutter/material.dart';
-// 1. Import các trang cần thiết
-import 'package:quan_ly_cafe/screens/order_history_screen.dart';
-import 'package:quan_ly_cafe/screens/profile_screen.dart'; // Đảm bảo bạn đã có file này
+import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
+// Import chuẩn xác theo cấu trúc dự án của bạn
+import 'package:quan_ly_cafe/screens/order_history_screen.dart';
+import 'package:quan_ly_cafe/screens/profile_screen.dart';
 import '../room_management.dart';
 import '../order_list_screen.dart';
 import '../staff_management_screen.dart';
+import '../role_management_screen.dart';
 
-class AdminHomeScreen extends StatelessWidget {
+class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
+
+  @override
+  State<AdminHomeScreen> createState() => _AdminHomeScreenState();
+}
+
+class _AdminHomeScreenState extends State<AdminHomeScreen> {
+  double revenue = 0;
+  int ordersCount = 0;
+  int activeTablesCount = 0;
+  List<dynamic> topProducts = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDashboardStats();
+  }
+
+  // Hàm gọi API lấy dữ liệu thực từ Laravel
+  Future<void> fetchDashboardStats() async {
+    try {
+      final response = await http.get(Uri.parse("http://10.0.2.2:8000/api/dashboard/stats"));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (mounted) {
+          setState(() {
+            revenue = double.tryParse(data['revenue'].toString()) ?? 0.0;
+            ordersCount = int.tryParse(data['orders_count'].toString()) ?? 0;
+            activeTablesCount = int.tryParse(data['active_tables'].toString()) ?? 0;
+            topProducts = data['top_products'] ?? [];
+            isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => isLoading = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  String formatMoney(double amount) {
+    return NumberFormat("###,###", "vi_VN").format(amount);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,20 +72,22 @@ class AdminHomeScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
+          IconButton(
+              onPressed: fetchDashboardStats,
+              icon: const Icon(Icons.refresh, color: Color(0xFF3B67D1))
+          ),
           IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none)),
         ],
       ),
       drawer: Drawer(
         child: Column(
           children: [
-            // SỬA TẠI ĐÂY: Bọc toàn bộ Header để ấn vào là chuyển sang Profile
             GestureDetector(
               onTap: () {
-                Navigator.pop(context); // Đóng drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    // Truyền userId (tạm thời để là 1 hoặc lấy từ biến đăng nhập)
                     builder: (context) => const ProfileScreen(userId: 1),
                   ),
                 );
@@ -64,11 +115,11 @@ class AdminHomeScreen extends StatelessWidget {
                   _buildMenuItem(Icons.account_balance_wallet_outlined, "Tổng quan doanh thu", onTap: () {
                     Navigator.pop(context);
                   }),
-                  _buildMenuItem(Icons.grid_view, "Phòng ban", onTap: () {
+                  _buildMenuItem(Icons.grid_view, "Phòng bàn", onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) =>  const RoomManagementScreen()),
+                      MaterialPageRoute(builder: (context) => const RoomManagementScreen()),
                     );
                   }),
                   _buildMenuItem(Icons.assignment_outlined, "Danh sách đơn hàng", onTap: () {
@@ -79,23 +130,27 @@ class AdminHomeScreen extends StatelessWidget {
                     );
                   }),
                   _buildMenuItem(Icons.history, "Lịch sử bàn giao ca"),
-
                   _buildMenuItem(Icons.update, "Lịch sử đơn hàng", onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) =>  OrderHistoryScreen()),
+                      MaterialPageRoute(builder: (context) => OrderHistoryScreen()),
                     );
                   }),
-
                   _buildMenuItem(Icons.people_outline, "Nhân viên", onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) =>  const StaffManagementScreen()),
+                      MaterialPageRoute(builder: (context) => const StaffManagementScreen()),
                     );
                   }),
-                  _buildMenuItem(Icons.admin_panel_settings_outlined, "Vai trò"),
+                  _buildMenuItem(Icons.security, ' vai trò', onTap: () {
+                    Navigator.pop(context); // Đóng Drawer
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const RoleManagementScreen())
+                    );
+                  }),
                   _buildMenuItem(Icons.lock_reset, "Đổi mật khẩu"),
                   const Divider(),
                   _buildMenuItem(Icons.logout, "Đăng xuất", color: Colors.red, onTap: () {
@@ -107,74 +162,121 @@ class AdminHomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF3B67D1),
-                borderRadius: BorderRadius.circular(16),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF3B67D1)))
+          : RefreshIndicator(
+        onRefresh: fetchDashboardStats,
+        color: const Color(0xFF3B67D1),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B67D1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Doanh thu tích lũy", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    Text(
+                      "${formatMoney(revenue)} đ",
+                      style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text("Cập nhật theo thời gian thực", style: TextStyle(color: Colors.white60, fontSize: 12)),
+                  ],
+                ),
               ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 20),
+              Row(
                 children: [
-                  Text("Doanh thu hôm nay", style: TextStyle(color: Colors.white70, fontSize: 14)),
-                  SizedBox(height: 8),
-                  Text("15.000.000 đ",
-                      style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 8),
-                  Text("↗ 20% so với hôm qua", style: TextStyle(color: Colors.white60, fontSize: 12)),
+                  // Đã thêm sự kiện onTap: Ấn vào ô Số đơn hàng nhảy sang OrderListScreen
+                  _buildStatCard(
+                    "Số đơn hàng",
+                    ordersCount.toString(),
+                    Icons.arrow_upward,
+                    Colors.green,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const OrderListScreen()),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 15),
+                  _buildStatCard(
+                    "Phòng bàn",
+                    activeTablesCount.toString(),
+                    null,
+                    Colors.black,
+                    subTitle: "Đang hoạt động",
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                _buildStatCard("Số đơn hàng", "120", Icons.arrow_upward, Colors.green),
-                const SizedBox(width: 15),
-                _buildStatCard("Phòng ban", "2", null, Colors.black, subTitle: "Đang hoạt động"),
-              ],
-            ),
-            const SizedBox(height: 25),
-            const Text("Hiệu suất sản phẩm",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 15),
-            _buildProductItem("Nước cam", "Đã bán: 50", Colors.orange),
-            _buildProductItem("Nước dừa", "Đã bán: 50", Colors.blue),
-            _buildProductItem("Cafe đen", "Đã bán: 10", Colors.brown),
-          ],
+              const SizedBox(height: 25),
+              const Text("Hiệu suất sản phẩm", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 15),
+
+              topProducts.isEmpty
+                  ? const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(child: Text("Chưa có sản phẩm nào được bán", style: TextStyle(color: Colors.grey))),
+              )
+                  : ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: topProducts.length,
+                itemBuilder: (context, index) {
+                  final item = topProducts[index];
+                  return _buildProductItem(
+                    item['name'] ?? "Sản phẩm",
+                    "Đã bán: ${item['sold']}",
+                    index == 0 ? Colors.brown : (index == 1 ? Colors.orange : Colors.blue),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData? icon, Color iconColor, {String? subTitle}) {
+  // Widget hiển thị ô thống kê (Số đơn hàng / Phòng bàn) hỗ trợ sự kiện chạm InkWell
+  Widget _buildStatCard(String title, String value, IconData? icon, Color iconColor, {String? subTitle, VoidCallback? onTap}) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                if (icon != null) Icon(icon, color: iconColor, size: 18),
-              ],
-            ),
-            if (subTitle != null)
-              Text(subTitle, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-          ],
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  if (icon != null) Icon(icon, color: iconColor, size: 18),
+                ],
+              ),
+              if (subTitle != null)
+                Text(subTitle, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            ],
+          ),
         ),
       ),
     );
@@ -197,6 +299,7 @@ class AdminHomeScreen extends StatelessWidget {
                 color: iconBgColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8)
             ),
+            // Đã bỏ const ở đây để đổi màu icon theo thứ hạng động index
             child: Icon(Icons.local_drink, color: iconBgColor),
           ),
           const SizedBox(width: 15),
