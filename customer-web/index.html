@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Menu – Quán Café</title>
+  <meta name="description" content="Đặt món tại bàn – Quán Café" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== LOADING ===== -->
+  <div id="screen-loading" class="screen active">
+    <div class="loading-wrap">
+      <div class="loading-spinner"></div>
+      <p>Đang tải thực đơn...</p>
+    </div>
+  </div>
+
+  <!-- ===== ERROR ===== -->
+  <div id="screen-error" class="screen">
+    <div class="error-wrap">
+      <div class="error-icon">⚠️</div>
+      <h2>Không thể tải thực đơn</h2>
+      <p id="error-message">Vui lòng thử lại.</p>
+      <button class="btn-primary" onclick="App.init()">Thử lại</button>
+    </div>
+  </div>
+
+  <!-- ===== MENU SCREEN ===== -->
+  <div id="screen-menu" class="screen">
+
+    <!-- Header -->
+    <div class="header">
+      <button class="header-back" onclick="history.back()">&#8249;</button>
+      <h1 class="header-title">Menu</h1>
+      <div class="header-right"></div>
+    </div>
+
+    <!-- Body scrollable -->
+    <div class="menu-body">
+
+      <!-- Search -->
+      <div class="search-wrap">
+        <div class="search-box">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="7" stroke="#999" stroke-width="2"/>
+            <path d="M16.5 16.5L21 21" stroke="#999" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input id="search-input" class="search-input" type="text" placeholder="Bạn muốn tìm gì?" oninput="App.onSearch(this.value)" />
+        </div>
+      </div>
+
+      <!-- Category section -->
+      <div class="section-label">Danh mục sản phẩm</div>
+      <div class="category-bar" id="category-bar">
+        <button class="cat-chip active" data-cat="all" onclick="App.filterCategory('all', this)">Tất cả</button>
+      </div>
+
+      <!-- Product section -->
+      <div class="section-label">Sản phẩm</div>
+      <div id="product-list" class="product-list">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Spacer for cart bar -->
+      <div style="height: 90px;"></div>
+    </div>
+
+    <!-- Cart bar -->
+    <div id="cart-bar" class="cart-bar hidden">
+      <div class="cart-bar-content" onclick="App.openCart()">
+        <div class="cart-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+            <line x1="3" y1="6" x2="21" y2="6" stroke="white" stroke-width="2"/>
+            <path d="M16 10a4 4 0 01-8 0" stroke="white" stroke-width="2"/>
+          </svg>
+          <span class="cart-badge" id="cart-count">0</span>
+        </div>
+        <span class="cart-bar-label">Xem giỏ hàng</span>
+        <span class="cart-bar-total" id="cart-total">0đ</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== CART PANEL ===== -->
+  <div id="cart-overlay" class="overlay hidden" onclick="App.closeCart()"></div>
+  <div id="cart-panel" class="bottom-panel hidden">
+    <div class="panel-drag"></div>
+    <div class="panel-head">
+      <h3>Giỏ hàng</h3>
+      <button class="btn-close" onclick="App.closeCart()">✕</button>
+    </div>
+    <div id="cart-items" class="cart-items-wrap"></div>
+    <div class="panel-foot">
+      <div class="total-row">
+        <span class="total-label">Tổng cộng</span>
+        <span class="total-val" id="cart-footer-total">0đ</span>
+      </div>
+      <button class="btn-primary btn-full" id="btn-order" onclick="App.openConfirm()">Đặt món</button>
+    </div>
+  </div>
+
+  <!-- ===== CONFIRM MODAL ===== -->
+  <div id="confirm-overlay" class="overlay hidden" onclick="App.closeConfirm()"></div>
+  <div id="confirm-panel" class="bottom-panel hidden">
+    <div class="panel-drag"></div>
+    <div class="panel-head">
+      <h3>Xác nhận đặt món</h3>
+      <button class="btn-close" onclick="App.closeConfirm()">✕</button>
+    </div>
+    <div class="confirm-body">
+      <div class="confirm-table-row">
+        <span>🪑</span>
+        <span id="confirm-table-name">Bàn 1</span>
+      </div>
+      <div id="confirm-list" class="confirm-list"></div>
+      <div class="confirm-total-row">
+        <span>Tổng tiền</span>
+        <span id="confirm-total" class="confirm-total-val">0đ</span>
+      </div>
+      <p class="confirm-hint">Nhân viên sẽ xác nhận và phục vụ bạn ngay!</p>
+    </div>
+    <div class="panel-foot">
+      <button class="btn-primary btn-full" id="btn-confirm" onclick="App.submitOrder()">✓ Xác nhận đặt món</button>
+      <button class="btn-ghost btn-full" onclick="App.closeConfirm()">Quay lại</button>
+    </div>
+  </div>
+
+  <!-- ===== SUCCESS SCREEN ===== -->
+  <div id="screen-success" class="screen">
+    <div class="success-wrap">
+      <div class="success-icon">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+          <circle cx="36" cy="36" r="36" fill="#E3F2FD"/>
+          <circle cx="36" cy="36" r="26" fill="#BBDEFB"/>
+          <path d="M22 36l10 10 18-18" stroke="#1976D2" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2>Đặt món thành công!</h2>
+      <p>Nhân viên đã nhận đơn của bạn.<br/>Vui lòng chờ trong giây lát! ☕</p>
+      <div class="success-detail" id="success-info"></div>
+      <button class="btn-primary" onclick="App.goBackToMenu()">Đặt thêm món</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
