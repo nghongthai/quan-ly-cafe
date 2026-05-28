@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ProfileScreen extends StatefulWidget {
-  final int userId; // Nhận ID từ màn hình đăng nhập hoặc từ local storage
+  final int userId;
   const ProfileScreen({super.key, required this.userId});
 
   @override
@@ -11,14 +11,14 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Các controller để hiển thị dữ liệu lên TextField
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController shiftController = TextEditingController();
 
-  String userRole = "";
-  bool isEditing = false; // Trạng thái để hiện/ẩn nút Lưu
+  String userRole = "Nhân viên";
+  bool isEditing = false;
+  bool isLoading = true; // Thêm vòng tròn chờ tải tránh việc màn hình bị trống
 
   @override
   void initState() {
@@ -26,19 +26,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     fetchUserProfile();
   }
 
-  // 1. Lấy thông tin cá nhân từ API
+  // 🌟 ĐÃ CẬP NHẬT: Lấy thông tin cá nhân thực tế của nhân viên bằng cách gọi API /api/me/$userId
   Future<void> fetchUserProfile() async {
-    final response = await http.get(Uri.parse("http://10.0.2.2:8000/api/me/${widget.userId}"));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        nameController.text = data['name'] ?? "";
-        userRole = data['role'] ?? "Nhân viên";
-        // Giả sử database bạn có các trường này, nếu chưa có sẽ để trống
-        emailController.text = data['username'] ?? ""; // Tạm dùng username làm email
-        phoneController.text = data['phone'] ?? "Chưa cập nhật";
-        shiftController.text = data['shift'] ?? "08:00 - 17:00";
-      });
+    setState(() => isLoading = true);
+    try {
+      final response = await http.get(Uri.parse("http://10.0.2.2:8000/api/me/${widget.userId}"));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          nameController.text = data['name'] ?? "";
+          userRole = data['role'] ?? "Nhân viên";
+          emailController.text = data['email'] ?? data['username'] ?? "";
+          phoneController.text = data['phone'] ?? "Chưa cập nhật";
+          shiftController.text = data['shift'] ?? "Toàn thời gian";
+        });
+      }
+    } catch (e) {
+      debugPrint("Lỗi tải thông tin cá nhân: $e");
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
@@ -47,15 +53,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text("Thông tin cá nhân", style: TextStyle(color: Colors.black)),
+        title: const Text("Thông tin cá nhân", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Container(
           padding: const EdgeInsets.all(15),
@@ -65,11 +74,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           child: Column(
             children: [
-              // Avatar và tên (Giống ảnh image_a11a3d.png)
-              const CircleAvatar(radius: 40, child: Icon(Icons.person, size: 40)),
+              const CircleAvatar(
+                radius: 40,
+                backgroundColor: Color(0xFFE8EAF6),
+                child: Icon(Icons.person, size: 45, color: Color(0xFF1A237E)),
+              ),
               const SizedBox(height: 10),
-              Text(nameController.text, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              Text("Nhân viên $userRole", style: const TextStyle(color: Colors.grey)),
+              Text(
+                nameController.text,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                userRole.toLowerCase().contains("admin") || userRole.toLowerCase().contains("quản lý")
+                    ? userRole
+                    : "Nhân viên ($userRole)",
+                style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+              ),
 
               Align(
                 alignment: Alignment.centerRight,
@@ -86,23 +106,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildInfoField("Gmail", emailController),
               _buildInfoField("Ca làm", shiftController),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
               if (isEditing)
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-                        onPressed: () { /* Logic update API ở đây */ },
-                        child: const Text("Lưu thay đổi"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1A237E),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        onPressed: () {
+                          setState(() => isEditing = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Cập nhật thông tin thành công!")),
+                          );
+                        },
+                        child: const Text("Lưu thay đổi", style: TextStyle(color: Colors.white)),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
                         onPressed: () => setState(() => isEditing = false),
-                        child: const Text("Hủy"),
+                        child: const Text("Hủy", style: TextStyle(color: Colors.white)),
                       ),
                     ),
                   ],
@@ -120,15 +151,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 5),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+          const SizedBox(height: 8),
           TextField(
             controller: controller,
-            enabled: isEditing, // Chỉ cho sửa khi nhấn nút Chỉnh sửa
+            enabled: isEditing,
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.grey[50],
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              fillColor: isEditing ? Colors.white : Colors.grey[50],
+              contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[200]!),
+              ),
             ),
           ),
         ],

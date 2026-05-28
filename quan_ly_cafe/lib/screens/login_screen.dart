@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'register_screen.dart';
-import 'admin/admin_home.dart'; // Đảm bảo đường dẫn này đúng
-import 'order_list_screen.dart'; // Trang dành cho nhân viên
+import 'admin/admin_home.dart';
+import 'order_list_screen.dart';
+import 'staff_room_screen.dart'; // 🌟 Đã sửa: Import đúng file sơ đồ bàn mới của nhân viên
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -36,52 +37,53 @@ class _LoginScreenState extends State<LoginScreen> {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: {
-          'email': _usernameController.text, // Chỉ sửa chữ 'username' thành 'email' ở đây
-          'password': _passwordController.text,
+          'email': _usernameController.text.trim(),
+          'password': _passwordController.text.trim(),
         },
       );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['status'] == 'success') {
-          // Chuyển role về chữ thường để so sánh chính xác
-          String role = data['data']['role'].toString().toLowerCase();
-          String name = data['data']['name'];
+      final data = json.decode(response.body);
 
-          _showSnackBar("Chào mừng $name!");
+      if (response.statusCode == 200 && data['status'] == 'success') {
+        String role = data['data']['role']?.toString().toLowerCase() ?? 'nhân viên';
 
-          if (!mounted) return;
+        _showSnackBar("Đăng nhập thành công!");
 
-          // LOGIC ĐIỀU HƯỚNG DỰA TRÊN ROLE
-          if (role == 'admin' || role == 'quản lý' || role == 'quan ly') {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminHomeScreen()),
-                  (route) => false,
-            );
-          } else {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const OrderListScreen()),
-                  (route) => false,
-            );
-          }
+        if (role == 'admin' || role == 'quản lý' || role == 'quan ly') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminHomeScreen()),
+                (route) => false,
+          );
+        } else {
+          // 🌟 ĐÃ SỬA TẠI ĐÂY: Bóc tách id và name từ API để truyền sang StaffRoomScreen
+          int userId = int.tryParse(data['data']['id'].toString()) ?? 0;
+          String staffName = data['data']['name'] ?? "Nhân viên phục vụ";
+
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StaffRoomScreen(
+                userId: userId,
+                staffName: staffName,
+              ),
+            ),
+                (route) => false,
+          );
         }
       } else {
-        final errorData = json.decode(response.body);
-        _showSnackBar(errorData['message'] ?? "Tài khoản hoặc mật khẩu không đúng");
+        _showSnackBar(data['message'] ?? "Tài khoản hoặc mật khẩu không đúng");
       }
     } catch (e) {
-      _showSnackBar("Lỗi kết nối Server: $e");
+      _showSnackBar("Không thể kết nối đến máy chủ: $e");
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
     }
   }
 
   void _showSnackBar(String message) {
-    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
   }
 
@@ -89,44 +91,56 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: const Icon(Icons.arrow_back, color: Colors.black),
-      ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                "Đăng nhập vào tài\nkhoản của bạn",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE8EAF6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.storefront, size: 80, color: Color(0xFF1A237E)),
               ),
-              const SizedBox(height: 30),
-
-              _buildTextField(_usernameController, "Username", Icons.person_outline),
-              const SizedBox(height: 16),
-
-              _buildTextField(_passwordController, "Mật khẩu", Icons.lock_outline, isPassword: true),
-
+              const SizedBox(height: 20),
+              const Text(
+                "Chào Mừng Trở Lại",
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1A237E)),
+              ),
+              const SizedBox(height: 5),
+              const Text("Đăng nhập để tiếp tục quản lý quán cafe của bạn", style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 40),
+              _buildTextField(_usernameController, "Tài khoản (Email)", Icons.person),
+              const SizedBox(height: 15),
+              _buildTextField(_passwordController, "Mật khẩu", Icons.lock, isPassword: true),
               const SizedBox(height: 10),
-
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Checkbox(
-                    value: _rememberMe,
-                    onChanged: (val) => setState(() => _rememberMe = val!),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _rememberMe,
+                        onChanged: (value) {
+                          setState(() {
+                            _rememberMe = value ?? false;
+                          });
+                        },
+                        activeColor: const Color(0xFF1A237E),
+                      ),
+                      const Text("Ghi nhớ tôi"),
+                    ],
                   ),
-                  const Text("Nhớ tài khoản"),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text("Quên mật khẩu?", style: TextStyle(color: Color(0xFF1A237E))),
+                  ),
                 ],
               ),
-
-              const SizedBox(height: 20),
-
+              const SizedBox(height: 25),
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -134,49 +148,32 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1A237E),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                    "Đăng nhập",
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                      : const Text("Đăng Nhập", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ),
-
-              Center(
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text("Quên mật khẩu", style: TextStyle(color: Colors.black54)),
-                ),
-              ),
-
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               const Row(
                 children: [
                   Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Text("Hoặc tiếp tục với", style: TextStyle(color: Colors.grey)),
-                  ),
+                  Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text("Hoặc đăng nhập với", style: TextStyle(color: Colors.grey))),
                   Expanded(child: Divider()),
                 ],
               ),
-
               const SizedBox(height: 20),
-
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _socialIcon(Icons.g_mobiledata),
+                  const SizedBox(width: 20),
                   _socialIcon(Icons.facebook),
-                  _socialIcon(Icons.apple),
                 ],
               ),
-
               const SizedBox(height: 30),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -224,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
         border: Border.all(color: Colors.grey[200]!),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(backupIcon, size: 30, color: Colors.black87),
+      child: Icon(backupIcon, size: 30, color: const Color(0xFF1A237E)),
     );
   }
 }

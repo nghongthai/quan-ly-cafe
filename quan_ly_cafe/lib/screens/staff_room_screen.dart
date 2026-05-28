@@ -2,23 +2,34 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'product_list_screen.dart'; // ✅ ĐÃ QUAY LẠI FILE GỐC CỦA BẠN
+import 'product_list_screen.dart';
 import 'order_detail_editable.dart';
+import 'order_list_screen.dart';
+import 'profile_screen.dart'; // 🌟 Đã thêm import trang thông tin cá nhân
+import 'login_screen.dart';
 
+class StaffRoomScreen extends StatefulWidget {
+  final int userId;       // 🌟 Nhận ID nhân viên truyền từ LoginScreen
+  final String staffName; // 🌟 Nhận Tên nhân viên truyền từ LoginScreen
 
-class RoomManagementScreen extends StatefulWidget {
-  const RoomManagementScreen({super.key});
+  const StaffRoomScreen({
+    super.key,
+    required this.userId,
+    required this.staffName,
+  });
 
   @override
-  State<RoomManagementScreen> createState() => _RoomManagementScreenState();
+  State<StaffRoomScreen> createState() => _StaffRoomScreenState();
 }
 
-class _RoomManagementScreenState extends State<RoomManagementScreen> {
+class _StaffRoomScreenState extends State<StaffRoomScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   List<dynamic> allTables = [];
   List<dynamic> filteredTables = [];
 
-  String selectedArea = 'Tất cả';    // Bộ lọc khu vực đẹp từ table_map
-  String filterStatus = 'Tất cả';   // Bộ lọc trạng thái cũ của bạn ("Tất cả", "Còn trống", "Đang dùng")
+  String selectedArea = 'Tất cả';
+  String filterStatus = 'Tất cả';
 
   bool isLoading = true;
   final String baseUrl = "http://10.0.2.2:8000/api";
@@ -29,13 +40,11 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
     fetchTables();
   }
 
-  // Hàm định dạng tiền tệ của bạn
   String formatMoney(dynamic amount) {
     return NumberFormat("###,###", "vi_VN")
         .format(double.tryParse(amount.toString()) ?? 0);
   }
 
-  // API lấy danh sách bàn gốc của bạn
   Future<void> fetchTables() async {
     setState(() => isLoading = true);
     try {
@@ -43,7 +52,7 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
       if (response.statusCode == 200) {
         setState(() {
           allTables = json.decode(response.body);
-          applyFilter(filterStatus); // Chạy bộ lọc kết hợp
+          applyFilter(filterStatus);
         });
       }
     } catch (e) {
@@ -53,12 +62,10 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
     }
   }
 
-  // Gộp logic lọc trạng thái của bạn với lọc Khu Vực đẹp
   void applyFilter(String status) {
     setState(() {
       filterStatus = status;
       filteredTables = allTables.where((table) {
-        // 1. Kiểm tra trạng thái giống file cũ của bạn
         bool isOccupied = table['status'] == 'occupied' ||
             table['status'] == '1' ||
             table['status'] == 1;
@@ -70,7 +77,6 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
           matchStatus = isOccupied;
         }
 
-        // 2. Kiểm tra khu vực
         bool matchArea = true;
         if (selectedArea != 'Tất cả') {
           String tableArea = (table['area'] ?? table['location'] ?? 'Trong nhà').toString();
@@ -85,15 +91,22 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9), // Màu nền xám nhẹ hiện đại
+      key: _scaffoldKey, // Quản lý mở đóng Drawer menu bằng nút 3 gạch
+      backgroundColor: const Color(0xFFF4F6F9),
       appBar: AppBar(
         title: const Text(
-          'Quản lý bàn ăn',
+          'Sơ đồ phòng bàn',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: Colors.black),
+          onPressed: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.blue),
@@ -101,9 +114,96 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
           ),
         ],
       ),
+
+      // 🌟 ĐÃ CẬP NHẬT: Giao diện Drawer Menu 3 gạch chứa các danh mục
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF3B67D9), Color(0xFF1E88E5)],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.person, size: 32, color: Colors.blue),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.staffName, // Hiển thị chuẩn tên nhân viên đang đăng nhập
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const Text(
+                    'Nhân viên phục vụ',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.table_restaurant, color: Colors.blue),
+              title: const Text('Sơ đồ phòng bàn', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history, color: Colors.orange),
+              title: const Text('Lịch sử đơn hàng'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const OrderListScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.lock_clock, color: Colors.teal),
+              title: const Text('Đóng ca làm việc'),
+              onTap: () {
+                Navigator.pop(context);
+                // Bạn có thể thêm Navigator chuyển sang trang đóng ca của bạn ở đây
+              },
+            ),
+            // 🌟 ĐÃ CẬP NHẬT: Nhấn vào thông tin cá nhân sẽ chuyển hướng vào ProfileScreen cùng userId
+            ListTile(
+              leading: const Icon(Icons.badge, color: Colors.purple),
+              title: const Text('Thông tin cá nhân'),
+              onTap: () {
+                Navigator.pop(context); // Đóng menu hông
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfileScreen(userId: widget.userId),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Đăng xuất', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      (route) => false,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+
       body: Column(
         children: [
-          // KHỐI 1: Thanh chọn KHU VỰC giao diện Tab ngang
           Container(
             color: Colors.white,
             height: 55,
@@ -119,7 +219,6 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
             ),
           ),
 
-          // KHỐI 2: Thanh lọc TRẠNG THÁI
           Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -133,7 +232,6 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
             ),
           ),
 
-          // KHỐI 3: Lưới danh sách các bàn
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -142,21 +240,19 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
                 : GridView.builder(
               padding: const EdgeInsets.all(14),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,       // Chia làm 2 cột
+                crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 1.25,   // Tỉ lệ ô vuông chữ nhật nằm ngang vừa vặn
+                childAspectRatio: 1.25,
               ),
               itemCount: filteredTables.length,
               itemBuilder: (context, index) {
                 final table = filteredTables[index];
 
-                // Kiểm tra trạng thái từ dữ liệu của bạn
                 bool isOccupied = table['status'] == 'occupied' ||
                     table['status'] == '1' ||
                     table['status'] == 1;
 
-                // Lấy tổng tiền đơn hàng đang hoạt động của bạn
                 double totalAmount = 0;
                 final activeOrder = table['active_order'] ?? table['current_order'];
                 if (activeOrder != null) {
@@ -165,7 +261,6 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
 
                 return InkWell(
                   onTap: () async {
-                    // LUỒNG ĐIỀU HƯỚNG GỐC CHUẨN CỦA BẠN:
                     if (isOccupied) {
                       final result = await Navigator.push(
                         context,
@@ -178,7 +273,6 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          // ✅ ĐÃ SỬA GỌI ĐÚNG PRODUCTLISTSCREEN VÀ ÉP KIỂU INT CHO TABLEID
                           builder: (context) => ProductListScreen(
                             tableId: int.parse(table['id'].toString()),
                           ),
@@ -263,7 +357,6 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
     );
   }
 
-  // Giao diện vẽ ô Tab chọn khu vực ngang
   Widget _buildAreaTab(String areaName) {
     bool isSelected = selectedArea == areaName;
     return GestureDetector(
@@ -294,7 +387,6 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
     );
   }
 
-  // Giao diện nút lọc trạng thái bo góc thay thế Dropdown cũ
   Widget _buildStatusButton(String statusName, IconData icon, Color color) {
     bool isSelected = filterStatus == statusName;
     return Expanded(

@@ -10,6 +10,7 @@ import '../room_management.dart';
 import '../order_list_screen.dart';
 import '../staff_management_screen.dart';
 import '../role_management_screen.dart';
+import '../login_screen.dart'; // 🌟 Đã thêm import LoginScreen để chuyển hướng khi đăng xuất
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -57,6 +58,48 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
   String formatMoney(double amount) {
     return NumberFormat("###,###", "vi_VN").format(amount);
+  }
+
+  // 🌟 HÀM HIỂN THỊ HỘP THOẠI XÁC NHẬN ĐĂNG XUẤT 2 BƯỚC
+  void _showLogoutConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+              SizedBox(width: 10),
+              Text("Xác nhận", style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: const Text("Bạn có chắc chắn muốn đăng xuất không?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), // Đóng hộp thoại nếu chọn Hủy
+              child: const Text("Hủy", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                Navigator.pop(context); // Đóng hộp thoại
+                // Điều hướng xóa sạch các màn hình cũ và đẩy về màn hình Login
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      (route) => false,
+                );
+              },
+              child: const Text("Đăng xuất", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -153,8 +196,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   }),
                   _buildMenuItem(Icons.lock_reset, "Đổi mật khẩu"),
                   const Divider(),
+
+                  // 🌟 ĐÃ SỬA TẠI ĐÂY: Khi ấn Đăng xuất sẽ đóng Drawer và hiện Hộp thoại xác nhận
                   _buildMenuItem(Icons.logout, "Đăng xuất", color: Colors.red, onTap: () {
-                    Navigator.pop(context);
+                    Navigator.pop(context); // Đóng menu hông trước
+                    _showLogoutConfirmation(); // Gọi hộp thoại hiển thị hộp thoại xác nhận
                   }),
                 ],
               ),
@@ -197,7 +243,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  // Đã thêm sự kiện onTap: Ấn vào ô Số đơn hàng nhảy sang OrderListScreen
                   _buildStatCard(
                     "Số đơn hàng",
                     ordersCount.toString(),
@@ -249,7 +294,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 
-  // Widget hiển thị ô thống kê (Số đơn hàng / Phòng bàn) hỗ trợ sự kiện chạm InkWell
   Widget _buildStatCard(String title, String value, IconData? icon, Color iconColor, {String? subTitle, VoidCallback? onTap}) {
     return Expanded(
       child: InkWell(
@@ -299,7 +343,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 color: iconBgColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8)
             ),
-            // Đã bỏ const ở đây để đổi màu icon theo thứ hạng động index
             child: Icon(Icons.local_drink, color: iconBgColor),
           ),
           const SizedBox(width: 15),
