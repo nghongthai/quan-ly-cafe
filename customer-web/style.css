@@ -144,6 +144,12 @@ html, body {
 /* ===== MENU BODY ===== */
 #screen-menu { overflow: hidden; }
 
+.menu-fixed-top {
+  flex-shrink: 0;
+  background: var(--blue-bg);
+  z-index: 10;
+}
+
 .menu-body {
   flex: 1;
   overflow-y: auto;

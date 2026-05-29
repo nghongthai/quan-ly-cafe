@@ -121,7 +121,13 @@ function renderSkeletons() {
 // Category chips
 function renderCategories() {
   const bar = document.getElementById('category-bar');
-  const cats = [...new Set(State.products.map(p => p.category || guessCategory(p.name)))];
+  let cats = [...new Set(State.products.map(p => p.category || guessCategory(p.name)))];
+
+  // Sắp xếp đưa danh mục 'Khác' xuống cuối cùng
+  if (cats.includes('Khác')) {
+    cats = cats.filter(c => c !== 'Khác');
+    cats.push('Khác');
+  }
 
   bar.innerHTML = `<button class="cat-chip active" data-cat="all" onclick="App.filterCategory('all',this)">Tất cả</button>`
     + cats.map(c =>
@@ -157,8 +163,12 @@ function renderProducts() {
     const qty = inCart ? inCart.quantity : 0;
     const emoji = getEmoji(p.id || i);
 
+    const imgUrl = p.image && (p.image.startsWith('http') || p.image.startsWith('/') || p.image.startsWith('data:'))
+      ? p.image
+      : `assets/images/${p.image}`;
+
     const imgEl = p.image
-      ? `<div class="product-img"><img src="${p.image}" alt="${p.name}" onerror="this.parentElement.innerHTML='<span style=font-size:32px>${emoji}</span>'"/></div>`
+      ? `<div class="product-img"><img src="${imgUrl}" alt="${p.name}" onerror="this.parentElement.innerHTML='<span style=font-size:32px>${emoji}</span>'"/></div>`
       : `<div class="product-img-placeholder">${emoji}</div>`;
 
     const qtyCtrl = qty > 0
@@ -225,8 +235,12 @@ function renderCart() {
   btn.disabled = false;
   wrap.innerHTML = items.map(({ product: p, quantity }) => {
     const emoji = getEmoji(p.id);
+    const imgUrl = p.image && (p.image.startsWith('http') || p.image.startsWith('/') || p.image.startsWith('data:'))
+      ? p.image
+      : `assets/images/${p.image}`;
+
     const imgEl = p.image
-      ? `<img src="${p.image}" alt="${p.name}" onerror="this.style.display='none'"/><span>${emoji}</span>`
+      ? `<img src="${imgUrl}" alt="${p.name}" onerror="this.style.display='none'"/><span>${emoji}</span>`
       : emoji;
     return `
       <div class="cart-item-row">
@@ -265,12 +279,12 @@ const App = {
     showScreen('screen-loading');
 
     const params = new URLSearchParams(window.location.search);
-    const tableId = params.get('table');
+    let tableId = params.get('table');
 
+    // Phương án 1: Tự động chọn Bàn 1 mặc định khi chạy thử nghiệm (Không có ?table= trên link)
     if (!tableId) {
-      showScreen('screen-error');
-      document.getElementById('error-message').textContent = 'Không tìm thấy mã bàn. Vui lòng quét lại QR code.';
-      return;
+      console.warn("Không tìm thấy tham số '?table=...' trên URL. Tự động gán Bàn 1 để chạy thử nghiệm.");
+      tableId = '1';
     }
 
     State.tableId = tableId;
