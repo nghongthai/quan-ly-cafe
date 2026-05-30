@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:quan_ly_cafe/screens/api_constants.dart';
 // Import file chi tiết
 import 'order_detail_screen.dart';
 
@@ -22,8 +23,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
   Future<List<dynamic>> fetchOrders(String status) async {
     try {
       // URL gọi API lấy danh sách đơn hàng từ Backend Laravel
-      final String url = "http://10.0.2.2:8000/api/list-orders?status=$status&filter=all";
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      final String url =
+          "${ApiConstants.baseUrl}/list-orders?status=$status&filter=all";
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -45,10 +49,16 @@ class _OrderListScreenState extends State<OrderListScreen> {
           backgroundColor: Colors.white,
           elevation: 0.5,
           centerTitle: true,
-          title: const Text("Đơn hàng",
-              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          title: const Text(
+            "Đơn hàng",
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: Colors.black,
+              size: 20,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
           bottom: const TabBar(
@@ -106,16 +116,25 @@ class _OrderListScreenState extends State<OrderListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.assignment_late_outlined, size: 70, color: Colors.grey[300]),
+          Icon(
+            Icons.assignment_late_outlined,
+            size: 70,
+            color: Colors.grey[300],
+          ),
           const SizedBox(height: 16),
-          const Text("Chưa có đơn hàng nào", style: TextStyle(color: Colors.grey)),
+          const Text(
+            "Chưa có đơn hàng nào",
+            style: TextStyle(color: Colors.grey),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildOrderItem(dynamic order) {
-    String tableName = order['table'] != null ? order['table']['name'].toString() : "N/A";
+    String tableName = order['table'] != null
+        ? order['table']['name'].toString()
+        : "N/A";
 
     return GestureDetector(
       onTap: () {
@@ -134,7 +153,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Row(
@@ -143,10 +166,18 @@ class _OrderListScreenState extends State<OrderListScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Đơn #${order['id']}",
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(
+                  "Đơn #${order['id']}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text("Bàn: $tableName", style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                Text(
+                  "Bàn: $tableName",
+                  style: const TextStyle(color: Colors.grey, fontSize: 14),
+                ),
               ],
             ),
             Column(
@@ -154,8 +185,14 @@ class _OrderListScreenState extends State<OrderListScreen> {
               children: [
                 _buildStatusBadge(order['status'] ?? 'pending'),
                 const SizedBox(height: 8),
-                Text(formatMoney(order['total_amount']),
-                    style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(
+                  formatMoney(order['total_amount']),
+                  style: const TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
               ],
             ),
           ],
@@ -165,12 +202,26 @@ class _OrderListScreenState extends State<OrderListScreen> {
   }
 
   Widget _buildStatusBadge(String status) {
-    Color color = status == 'completed' ? Colors.green : (status == 'pending' ? Colors.orange : Colors.red);
-    String text = status == 'completed' ? "Hoàn thành" : (status == 'pending' ? "Chờ xử lý" : "Đã hủy");
+    Color color = status == 'completed'
+        ? Colors.green
+        : (status == 'pending' ? Colors.orange : Colors.red);
+    String text = status == 'completed'
+        ? "Hoàn thành"
+        : (status == 'pending' ? "Chờ xử lý" : "Đã hủy");
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-      child: Text(text, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

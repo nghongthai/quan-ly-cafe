@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:quan_ly_cafe/screens/api_constants.dart';
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -17,9 +19,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
 
   Future<void> _handleRegister() async {
-    const String apiUrl = "http://10.0.2.2:8000/api/register";
-
-    if (_nameController.text.isEmpty || _usernameController.text.isEmpty || _passwordController.text.isEmpty) {
+    final String apiUrl = "${ApiConstants.baseUrl}/register";
+    if (_nameController.text.isEmpty ||
+        _usernameController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
       _showSnackBar("Vui lòng điền đầy đủ thông tin");
       return;
     }
@@ -54,21 +57,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(backgroundColor: Colors.white, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Tạo tài khoản của bạn",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            const Text(
+              "Tạo tài khoản của bạn",
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 30),
 
             // Ô nhập Tên hiển thị
@@ -76,11 +87,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 16),
 
             // Ô nhập Username
-            _buildTextField(_usernameController, "Tên đăng nhập (Username)", Icons.person_outline),
+            _buildTextField(
+              _usernameController,
+              "Tên đăng nhập (Username)",
+              Icons.person_outline,
+            ),
             const SizedBox(height: 16),
 
             // Ô nhập Mật khẩu
-            _buildTextField(_passwordController, "Mật khẩu", Icons.lock_outline, isPassword: true),
+            _buildTextField(
+              _passwordController,
+              "Mật khẩu",
+              Icons.lock_outline,
+              isPassword: true,
+            ),
 
             const SizedBox(height: 30),
 
@@ -90,12 +110,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _handleRegister,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A237E), // Màu xanh Navy chuẩn Figma
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  backgroundColor: const Color(
+                    0xFF1A237E,
+                  ), // Màu xanh Navy chuẩn Figma
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("Tạo tài khoản", style: TextStyle(color: Colors.white, fontSize: 16)),
+                    : const Text(
+                        "Tạo tài khoản",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
               ),
             ),
 
@@ -105,8 +132,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 const Text("Bạn đã có tài khoản?"),
                 TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("Đăng nhập", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A237E)))
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    "Đăng nhập",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A237E),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -116,7 +149,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, IconData icon, {bool isPassword = false}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint,
+    IconData icon, {
+    bool isPassword = false,
+  }) {
     return TextField(
       controller: controller,
       obscureText: isPassword,
@@ -125,7 +163,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         prefixIcon: Icon(icon),
         filled: true,
         fillColor: Colors.grey[100],
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:quan_ly_cafe/screens/api_constants.dart';
 
 class PaymentStaffScreen extends StatefulWidget {
-  final Map<String, dynamic> orderData; // Nhận toàn bộ cục dữ liệu đơn hàng từ Laravel truyền sang
+  final Map<String, dynamic>
+  orderData; // Nhận toàn bộ cục dữ liệu đơn hàng từ Laravel truyền sang
 
   const PaymentStaffScreen({super.key, required this.orderData});
 
@@ -15,7 +17,8 @@ class PaymentStaffScreen extends StatefulWidget {
 class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
   bool isProcessing = false;
   String selectedPaymentMethod = 'Tiền mặt'; // Mặc định chọn tiền mặt
-  final TextEditingController _receivedMoneyController = TextEditingController();
+  final TextEditingController _receivedMoneyController =
+      TextEditingController();
   int receivedMoney = 0;
 
   // Hàm xử lý thanh toán thực tế gọi tới Laravel Backend
@@ -26,7 +29,7 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
       // 10.0.2.2 là localhost dành cho máy ảo Android.
       // Nếu test máy thật, hãy đổi thành IP máy tính của bạn (Ví dụ: 192.168.1.X)
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8000/api/checkout"),
+        Uri.parse("${ApiConstants.baseUrl}/checkout"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "order_id": widget.orderData['id'],
@@ -65,7 +68,10 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
 
   // Hàm format định dạng tiền tệ Việt Nam (VD: 150,000đ)
   String formatMoney(dynamic amount) {
-    return NumberFormat("###,###", "vi_VN").format(double.parse(amount.toString()));
+    return NumberFormat(
+      "###,###",
+      "vi_VN",
+    ).format(double.parse(amount.toString()));
   }
 
   @override
@@ -93,7 +99,10 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
         ),
         title: Text(
           "Thanh toán - ${order['table']['name']}",
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -106,7 +115,9 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 10),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,7 +127,10 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFE3F2FD),
                           borderRadius: BorderRadius.circular(12),
@@ -144,7 +158,10 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                           ),
                           Text(
                             "#${order['id']}",
-                            style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -155,7 +172,10 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                   // Danh sách món ăn
                   const Text(
                     "Chi tiết món đã gọi",
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueGrey,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   ListView.builder(
@@ -175,7 +195,9 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                             ),
                             Text(
                               "${formatMoney(item['price'])}đ",
-                              style: const TextStyle(fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ],
                         ),
@@ -190,7 +212,10 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                     children: [
                       const Text(
                         "Tổng cộng:",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       Text(
                         "${formatMoney(order['total_amount'])}đ",
@@ -212,9 +237,15 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      _buildPaymentMethodOption('Tiền mặt', Icons.payments_outlined),
+                      _buildPaymentMethodOption(
+                        'Tiền mặt',
+                        Icons.payments_outlined,
+                      ),
                       const SizedBox(width: 12),
-                      _buildPaymentMethodOption('Chuyển khoản', Icons.qr_code_2),
+                      _buildPaymentMethodOption(
+                        'Chuyển khoản',
+                        Icons.qr_code_2,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -223,7 +254,10 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                   if (selectedPaymentMethod == 'Tiền mặt') ...[
                     const Text(
                       'Tiền khách đưa (VNĐ)',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -233,8 +267,13 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                         filled: true,
                         fillColor: const Color(0xFFF8F9FA),
                         hintText: 'Nhập số tiền...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                       ),
                       onChanged: (value) {
                         setState(() {
@@ -246,7 +285,10 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Tiền thừa trả khách:', style: TextStyle(fontSize: 15)),
+                        const Text(
+                          'Tiền thừa trả khách:',
+                          style: TextStyle(fontSize: 15),
+                        ),
                         Text(
                           '${formatMoney(change)}đ',
                           style: const TextStyle(
@@ -272,9 +314,20 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.qr_code_scanner, size: 40, color: Colors.grey),
+                              Icon(
+                                Icons.qr_code_scanner,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
                               SizedBox(height: 8),
-                              Text('QUÉT MÃ QR', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                              Text(
+                                'QUÉT MÃ QR',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -295,14 +348,20 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                   onPressed: isProcessing ? null : processPayment,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3B67D9),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: isProcessing
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
-                    'HOÀN TẤT THANH TOÁN',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
+                          'HOÀN TẤT THANH TOÁN',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -337,7 +396,11 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: isSelected ? const Color(0xFF3B67D9) : Colors.grey, size: 20),
+              Icon(
+                icon,
+                color: isSelected ? const Color(0xFF3B67D9) : Colors.grey,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 method,

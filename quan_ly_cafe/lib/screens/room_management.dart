@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:quan_ly_cafe/screens/api_constants.dart';
 import 'product_list_screen.dart'; // ✅ ĐÃ QUAY LẠI FILE GỐC CỦA BẠN
 import 'order_detail_editable.dart';
-
 
 class RoomManagementScreen extends StatefulWidget {
   const RoomManagementScreen({super.key});
@@ -17,11 +17,12 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
   List<dynamic> allTables = [];
   List<dynamic> filteredTables = [];
 
-  String selectedArea = 'Tất cả';    // Bộ lọc khu vực đẹp từ table_map
-  String filterStatus = 'Tất cả';   // Bộ lọc trạng thái cũ của bạn ("Tất cả", "Còn trống", "Đang dùng")
+  String selectedArea = 'Tất cả'; // Bộ lọc khu vực đẹp từ table_map
+  String filterStatus =
+      'Tất cả'; // Bộ lọc trạng thái cũ của bạn ("Tất cả", "Còn trống", "Đang dùng")
 
   bool isLoading = true;
-  final String baseUrl = "http://10.0.2.2:8000/api";
+  final String baseUrl = "${ApiConstants.baseUrl}";
 
   @override
   void initState() {
@@ -31,8 +32,10 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
 
   // Hàm định dạng tiền tệ của bạn
   String formatMoney(dynamic amount) {
-    return NumberFormat("###,###", "vi_VN")
-        .format(double.tryParse(amount.toString()) ?? 0);
+    return NumberFormat(
+      "###,###",
+      "vi_VN",
+    ).format(double.tryParse(amount.toString()) ?? 0);
   }
 
   // API lấy danh sách bàn gốc của bạn
@@ -59,7 +62,8 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
       filterStatus = status;
       filteredTables = allTables.where((table) {
         // 1. Kiểm tra trạng thái giống file cũ của bạn
-        bool isOccupied = table['status'] == 'occupied' ||
+        bool isOccupied =
+            table['status'] == 'occupied' ||
             table['status'] == '1' ||
             table['status'] == 1;
 
@@ -73,7 +77,8 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
         // 2. Kiểm tra khu vực
         bool matchArea = true;
         if (selectedArea != 'Tất cả') {
-          String tableArea = (table['area'] ?? table['location'] ?? 'Trong nhà').toString();
+          String tableArea = (table['area'] ?? table['location'] ?? 'Trong nhà')
+              .toString();
           matchArea = tableArea.contains(selectedArea);
         }
 
@@ -126,7 +131,11 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
               children: [
                 _buildStatusButton('Tất cả', Icons.border_all, Colors.grey),
                 const SizedBox(width: 8),
-                _buildStatusButton('Còn trống', Icons.check_circle_outline, Colors.green),
+                _buildStatusButton(
+                  'Còn trống',
+                  Icons.check_circle_outline,
+                  Colors.green,
+                ),
                 const SizedBox(width: 8),
                 _buildStatusButton('Đang dùng', Icons.local_cafe, Colors.blue),
               ],
@@ -138,125 +147,159 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : filteredTables.isEmpty
-                ? const Center(child: Text("Không có bàn nào phù hợp", style: TextStyle(color: Colors.grey)))
-                : GridView.builder(
-              padding: const EdgeInsets.all(14),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,       // Chia làm 2 cột
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.25,   // Tỉ lệ ô vuông chữ nhật nằm ngang vừa vặn
-              ),
-              itemCount: filteredTables.length,
-              itemBuilder: (context, index) {
-                final table = filteredTables[index];
-
-                // Kiểm tra trạng thái từ dữ liệu của bạn
-                bool isOccupied = table['status'] == 'occupied' ||
-                    table['status'] == '1' ||
-                    table['status'] == 1;
-
-                // Lấy tổng tiền đơn hàng đang hoạt động của bạn
-                double totalAmount = 0;
-                final activeOrder = table['active_order'] ?? table['current_order'];
-                if (activeOrder != null) {
-                  totalAmount = double.tryParse(activeOrder['total_amount'].toString()) ?? 0;
-                }
-
-                return InkWell(
-                  onTap: () async {
-                    // LUỒNG ĐIỀU HƯỚNG GỐC CHUẨN CỦA BẠN:
-                    if (isOccupied) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OrderDetailEditableScreen(order: activeOrder),
-                        ),
-                      );
-                      if (result != null) fetchTables();
-                    } else {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          // ✅ ĐÃ SỬA GỌI ĐÚNG PRODUCTLISTSCREEN VÀ ÉP KIỂU INT CHO TABLEID
-                          builder: (context) => ProductListScreen(
-                            tableId: int.parse(table['id'].toString()),
-                          ),
-                        ),
-                      );
-                      if (result != null) fetchTables();
-                    }
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    decoration: BoxDecoration(
-                      color: isOccupied ? const Color(0xFFE3F2FD) : Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isOccupied ? const Color(0xFF1E88E5) : Colors.grey[200]!,
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        )
-                      ],
+                ? const Center(
+                    child: Text(
+                      "Không có bàn nào phù hợp",
+                      style: TextStyle(color: Colors.grey),
                     ),
+                  )
+                : GridView.builder(
                     padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Bàn ${table['name'] ?? table['id']}",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: isOccupied ? const Color(0xFF0D47A1) : Colors.black87,
-                              ),
-                            ),
-                            Icon(
-                              isOccupied ? Icons.local_cafe : Icons.check_circle,
-                              color: isOccupied ? Colors.blue : Colors.green,
-                              size: 20,
-                            )
-                          ],
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2, // Chia làm 2 cột
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio:
+                              1.25, // Tỉ lệ ô vuông chữ nhật nằm ngang vừa vặn
                         ),
-                        if (isOccupied && totalAmount > 0) ...[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Icon(Icons.receipt_long, color: Colors.redAccent, size: 16),
-                              Text(
-                                "${formatMoney(totalAmount)}đ",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Colors.red,
+                    itemCount: filteredTables.length,
+                    itemBuilder: (context, index) {
+                      final table = filteredTables[index];
+
+                      // Kiểm tra trạng thái từ dữ liệu của bạn
+                      bool isOccupied =
+                          table['status'] == 'occupied' ||
+                          table['status'] == '1' ||
+                          table['status'] == 1;
+
+                      // Lấy tổng tiền đơn hàng đang hoạt động của bạn
+                      double totalAmount = 0;
+                      final activeOrder =
+                          table['active_order'] ?? table['current_order'];
+                      if (activeOrder != null) {
+                        totalAmount =
+                            double.tryParse(
+                              activeOrder['total_amount'].toString(),
+                            ) ??
+                            0;
+                      }
+
+                      return InkWell(
+                        onTap: () async {
+                          // LUỒNG ĐIỀU HƯỚNG GỐC CHUẨN CỦA BẠN:
+                          if (isOccupied) {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OrderDetailEditableScreen(
+                                  order: activeOrder,
                                 ),
+                              ),
+                            );
+                            if (result != null) fetchTables();
+                          } else {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                // ✅ ĐÃ SỬA GỌI ĐÚNG PRODUCTLISTSCREEN VÀ ÉP KIỂU INT CHO TABLEID
+                                builder: (context) => ProductListScreen(
+                                  tableId: int.parse(table['id'].toString()),
+                                ),
+                              ),
+                            );
+                            if (result != null) fetchTables();
+                          }
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          decoration: BoxDecoration(
+                            color: isOccupied
+                                ? const Color(0xFFE3F2FD)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isOccupied
+                                  ? const Color(0xFF1E88E5)
+                                  : Colors.grey[200]!,
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.02),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
                               ),
                             ],
                           ),
-                        ] else ...[
-                          const Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              'Còn trống',
-                              style: TextStyle(color: Colors.grey, fontSize: 12),
-                            ),
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Bàn ${table['name'] ?? table['id']}",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: isOccupied
+                                          ? const Color(0xFF0D47A1)
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                  Icon(
+                                    isOccupied
+                                        ? Icons.local_cafe
+                                        : Icons.check_circle,
+                                    color: isOccupied
+                                        ? Colors.blue
+                                        : Colors.green,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                              if (isOccupied && totalAmount > 0) ...[
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Icon(
+                                      Icons.receipt_long,
+                                      color: Colors.redAccent,
+                                      size: 16,
+                                    ),
+                                    Text(
+                                      "${formatMoney(totalAmount)}đ",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ] else ...[
+                                const Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Text(
+                                    'Còn trống',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                        ],
-                      ],
-                    ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -301,14 +344,19 @@ class _RoomManagementScreenState extends State<RoomManagementScreen> {
       child: ElevatedButton.icon(
         onPressed: () => applyFilter(statusName),
         icon: Icon(icon, size: 14, color: isSelected ? Colors.white : color),
-        label: Text(statusName, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        label: Text(
+          statusName,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: isSelected ? color : Colors.white,
           foregroundColor: isSelected ? Colors.white : Colors.black87,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: isSelected ? Colors.transparent : Colors.grey[300]!),
+            side: BorderSide(
+              color: isSelected ? Colors.transparent : Colors.grey[300]!,
+            ),
           ),
           padding: const EdgeInsets.symmetric(vertical: 8),
         ),

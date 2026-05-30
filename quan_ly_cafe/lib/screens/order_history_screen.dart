@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:quan_ly_cafe/screens/api_constants.dart';
+
 class OrderHistoryScreen extends StatefulWidget {
   @override
   _OrderHistoryScreenState createState() => _OrderHistoryScreenState();
@@ -29,7 +31,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
     try {
       // 1. URL truyền tham số status và filter khớp với hàm listOrders ở Backend
-      final String url = "http://10.0.2.2:8000/api/list-orders?status=completed&filter=$filterType";
+      final String url =
+          "${ApiConstants.baseUrl}/list-orders?status=completed&filter=$filterType";
 
       final response = await http.get(Uri.parse(url));
 
@@ -61,8 +64,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text("Lịch sử đơn hàng",
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Lịch sử đơn hàng",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: Column(
@@ -85,17 +90,17 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : RefreshIndicator(
-              onRefresh: () => fetchOrders(selectedTab),
-              child: orders.isEmpty
-                  ? const Center(child: Text("Không có đơn hàng nào"))
-                  : ListView.builder(
-                padding: const EdgeInsets.all(15),
-                itemCount: orders.length,
-                itemBuilder: (context, index) {
-                  return _buildOrderItem(orders[index]);
-                },
-              ),
-            ),
+                    onRefresh: () => fetchOrders(selectedTab),
+                    child: orders.isEmpty
+                        ? const Center(child: Text("Không có đơn hàng nào"))
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(15),
+                            itemCount: orders.length,
+                            itemBuilder: (context, index) {
+                              return _buildOrderItem(orders[index]);
+                            },
+                          ),
+                  ),
           ),
         ],
       ),
@@ -110,18 +115,24 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     String formattedTime = DateFormat('HH:mm - dd/MM').format(createdAt);
 
     // 4. Lấy tên bàn từ quan hệ 'table' đã được 'with' ở Backend
-    String tableName = order['table'] != null ? order['table']['name'].toString() : "N/A";
+    String tableName = order['table'] != null
+        ? order['table']['name'].toString()
+        : "N/A";
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2))
-          ]
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -130,22 +141,39 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                  "$tableName - #${order['id']}",
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
+                "$tableName - #${order['id']}",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 5),
-              Text(formattedTime, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+              Text(
+                formattedTime,
+                style: const TextStyle(color: Colors.grey, fontSize: 13),
+              ),
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                  "${formatter.format(num.parse(order['total_amount'].toString()))}đ",
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 16)
+                "${formatter.format(num.parse(order['total_amount'].toString()))}đ",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 5),
-              const Text("Hoàn thành", style: TextStyle(color: Colors.green, fontSize: 13, fontWeight: FontWeight.w500)),
+              const Text(
+                "Hoàn thành",
+                style: TextStyle(
+                  color: Colors.green,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ],
@@ -162,13 +190,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         decoration: BoxDecoration(
           color: isActive ? Colors.blue : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isActive ? Colors.blue : Colors.transparent),
+          border: Border.all(
+            color: isActive ? Colors.blue : Colors.transparent,
+          ),
         ),
         child: Text(
           title,
           style: TextStyle(
-              color: isActive ? Colors.white : Colors.black54,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal
+            color: isActive ? Colors.white : Colors.black54,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ),

@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:quan_ly_cafe/screens/api_constants.dart';
+
 class OrderDetailScreen extends StatelessWidget {
   final dynamic order;
   const OrderDetailScreen({super.key, required this.order});
@@ -29,9 +31,10 @@ class OrderDetailScreen extends StatelessWidget {
       );
 
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8000/api/order/checkout"),
+        Uri.parse("${ApiConstants.baseUrl}/order/checkout"),
         headers: {
-          "Content-Type": "application/json", // Bắt buộc để Laravel nhận diện JSON
+          "Content-Type":
+              "application/json", // Bắt buộc để Laravel nhận diện JSON
         },
         body: jsonEncode({
           'table_id': order['table_id'], // Gửi trực tiếp table_id
@@ -62,7 +65,10 @@ class OrderDetailScreen extends StatelessWidget {
       if (context.mounted) {
         Navigator.pop(context); // Đóng loading nếu lỗi
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Lỗi thanh toán: $e"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Lỗi thanh toán: $e"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -78,8 +84,13 @@ class OrderDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Chi tiết đơn #${order['id'] ?? 0}",
-            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(
+          "Chi tiết đơn #${order['id'] ?? 0}",
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0.5,
         centerTitle: true,
@@ -108,8 +119,20 @@ class OrderDetailScreen extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text("Vị trí bàn", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                            Text(tableName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              "Vị trí bàn",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              tableName,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                         _buildStatusBadge(order['status'] ?? 'pending'),
@@ -117,69 +140,113 @@ class OrderDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  const Text("DANH SÁCH MÓN",
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, letterSpacing: 1.1)),
+                  const Text(
+                    "DANH SÁCH MÓN",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
                   const Divider(height: 30),
 
                   details.isEmpty
                       ? const Center(child: Text("Chưa có món nào được chọn"))
                       : ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: details.length,
-                    itemBuilder: (context, index) {
-                      final item = details[index];
-                      String productName = item['product'] != null ? item['product']['name'] : "Sản phẩm";
-                      String productImage = item['product'] != null ? item['product']['image'] : "cafe_den.png";
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: details.length,
+                          itemBuilder: (context, index) {
+                            final item = details[index];
+                            String productName = item['product'] != null
+                                ? item['product']['name']
+                                : "Sản phẩm";
+                            String productImage = item['product'] != null
+                                ? item['product']['image']
+                                : "cafe_den.png";
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 20),
-                        child: Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.asset(
-                                'assets/images/$productImage',
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  width: 50,
-                                  height: 50,
-                                  color: Colors.grey[200],
-                                  child: const Icon(Icons.coffee, color: Colors.brown),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 15),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 20),
+                              child: Row(
                                 children: [
-                                  Text(productName,
-                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                                  Text("Số lượng: x${item['quantity']}",
-                                      style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.asset(
+                                      'assets/images/$productImage',
+                                      width: 50,
+                                      height: 50,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                                width: 50,
+                                                height: 50,
+                                                color: Colors.grey[200],
+                                                child: const Icon(
+                                                  Icons.coffee,
+                                                  color: Colors.brown,
+                                                ),
+                                              ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 15),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          productName,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        Text(
+                                          "Số lượng: x${item['quantity']}",
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    formatMoney(
+                                      double.parse(item['price'].toString()) *
+                                          item['quantity'],
+                                    ),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
                                 ],
                               ),
-                            ),
-                            Text(
-                              formatMoney(double.parse(item['price'].toString()) * item['quantity']),
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                            ),
-                          ],
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
 
                   const Divider(height: 40),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("TỔNG CỘNG", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text(formatMoney(order['total_amount']),
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                      const Text(
+                        "TỔNG CỘNG",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        formatMoney(order['total_amount']),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.redAccent,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -200,12 +267,20 @@ class OrderDetailScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.brown[600],
                   disabledBackgroundColor: Colors.grey,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                   elevation: 0,
                 ),
                 child: Text(
-                    order['status'] == 'completed' ? "ĐÃ THANH TOÁN" : "THANH TOÁN",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
+                  order['status'] == 'completed'
+                      ? "ĐÃ THANH TOÁN"
+                      : "THANH TOÁN",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -216,12 +291,26 @@ class OrderDetailScreen extends StatelessWidget {
   }
 
   Widget _buildStatusBadge(String status) {
-    Color color = status == 'completed' ? Colors.green : (status == 'pending' ? Colors.orange : Colors.red);
-    String text = status == 'completed' ? "Hoàn thành" : (status == 'pending' ? "Chờ xử lý" : "Đã hủy");
+    Color color = status == 'completed'
+        ? Colors.green
+        : (status == 'pending' ? Colors.orange : Colors.red);
+    String text = status == 'completed'
+        ? "Hoàn thành"
+        : (status == 'pending' ? "Chờ xử lý" : "Đã hủy");
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-      child: Text(text.toUpperCase(), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

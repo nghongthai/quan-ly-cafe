@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:quan_ly_cafe/screens/api_constants.dart';
 import 'product_list_screen.dart';
 import 'order_detail_editable.dart';
 import 'order_list_screen.dart';
@@ -9,7 +10,7 @@ import 'profile_screen.dart'; // 🌟 Đã thêm import trang thông tin cá nh�
 import 'login_screen.dart';
 
 class StaffRoomScreen extends StatefulWidget {
-  final int userId;       // 🌟 Nhận ID nhân viên truyền từ LoginScreen
+  final int userId; // 🌟 Nhận ID nhân viên truyền từ LoginScreen
   final String staffName; // 🌟 Nhận Tên nhân viên truyền từ LoginScreen
 
   const StaffRoomScreen({
@@ -32,7 +33,7 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
   String filterStatus = 'Tất cả';
 
   bool isLoading = true;
-  final String baseUrl = "http://10.0.2.2:8000/api";
+  final String baseUrl = "${ApiConstants.baseUrl}";
 
   @override
   void initState() {
@@ -41,8 +42,10 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
   }
 
   String formatMoney(dynamic amount) {
-    return NumberFormat("###,###", "vi_VN")
-        .format(double.tryParse(amount.toString()) ?? 0);
+    return NumberFormat(
+      "###,###",
+      "vi_VN",
+    ).format(double.tryParse(amount.toString()) ?? 0);
   }
 
   Future<void> fetchTables() async {
@@ -66,7 +69,8 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
     setState(() {
       filterStatus = status;
       filteredTables = allTables.where((table) {
-        bool isOccupied = table['status'] == 'occupied' ||
+        bool isOccupied =
+            table['status'] == 'occupied' ||
             table['status'] == '1' ||
             table['status'] == 1;
 
@@ -79,7 +83,8 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
 
         bool matchArea = true;
         if (selectedArea != 'Tất cả') {
-          String tableArea = (table['area'] ?? table['location'] ?? 'Trong nhà').toString();
+          String tableArea = (table['area'] ?? table['location'] ?? 'Trong nhà')
+              .toString();
           matchArea = tableArea.contains(selectedArea);
         }
 
@@ -137,8 +142,13 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    widget.staffName, // Hiển thị chuẩn tên nhân viên đang đăng nhập
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    widget
+                        .staffName, // Hiển thị chuẩn tên nhân viên đang đăng nhập
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const Text(
                     'Nhân viên phục vụ',
@@ -149,7 +159,10 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.table_restaurant, color: Colors.blue),
-              title: const Text('Sơ đồ phòng bàn', style: TextStyle(fontWeight: FontWeight.bold)),
+              title: const Text(
+                'Sơ đồ phòng bàn',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               onTap: () => Navigator.pop(context),
             ),
             ListTile(
@@ -159,7 +172,9 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const OrderListScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const OrderListScreen(),
+                  ),
                 );
               },
             ),
@@ -188,13 +203,19 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Đăng xuất', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              title: const Text(
+                'Đăng xuất',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      (route) => false,
+                  (route) => false,
                 );
               },
             ),
@@ -225,7 +246,11 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
               children: [
                 _buildStatusButton('Tất cả', Icons.border_all, Colors.grey),
                 const SizedBox(width: 8),
-                _buildStatusButton('Còn trống', Icons.check_circle_outline, Colors.green),
+                _buildStatusButton(
+                  'Còn trống',
+                  Icons.check_circle_outline,
+                  Colors.green,
+                ),
                 const SizedBox(width: 8),
                 _buildStatusButton('Đang dùng', Icons.local_cafe, Colors.blue),
               ],
@@ -236,121 +261,154 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : filteredTables.isEmpty
-                ? const Center(child: Text("Không có bàn nào phù hợp", style: TextStyle(color: Colors.grey)))
-                : GridView.builder(
-              padding: const EdgeInsets.all(14),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.25,
-              ),
-              itemCount: filteredTables.length,
-              itemBuilder: (context, index) {
-                final table = filteredTables[index];
-
-                bool isOccupied = table['status'] == 'occupied' ||
-                    table['status'] == '1' ||
-                    table['status'] == 1;
-
-                double totalAmount = 0;
-                final activeOrder = table['active_order'] ?? table['current_order'];
-                if (activeOrder != null) {
-                  totalAmount = double.tryParse(activeOrder['total_amount'].toString()) ?? 0;
-                }
-
-                return InkWell(
-                  onTap: () async {
-                    if (isOccupied) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OrderDetailEditableScreen(order: activeOrder),
-                        ),
-                      );
-                      if (result != null) fetchTables();
-                    } else {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProductListScreen(
-                            tableId: int.parse(table['id'].toString()),
-                          ),
-                        ),
-                      );
-                      if (result != null) fetchTables();
-                    }
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    decoration: BoxDecoration(
-                      color: isOccupied ? const Color(0xFFE3F2FD) : Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isOccupied ? const Color(0xFF1E88E5) : Colors.grey[200]!,
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        )
-                      ],
+                ? const Center(
+                    child: Text(
+                      "Không có bàn nào phù hợp",
+                      style: TextStyle(color: Colors.grey),
                     ),
+                  )
+                : GridView.builder(
                     padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Bàn ${table['name'] ?? table['id']}",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: isOccupied ? const Color(0xFF0D47A1) : Colors.black87,
-                              ),
-                            ),
-                            Icon(
-                              isOccupied ? Icons.local_cafe : Icons.check_circle,
-                              color: isOccupied ? Colors.blue : Colors.green,
-                              size: 20,
-                            )
-                          ],
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.25,
                         ),
-                        if (isOccupied && totalAmount > 0) ...[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Icon(Icons.receipt_long, color: Colors.redAccent, size: 16),
-                              Text(
-                                "${formatMoney(totalAmount)}đ",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Colors.red,
+                    itemCount: filteredTables.length,
+                    itemBuilder: (context, index) {
+                      final table = filteredTables[index];
+
+                      bool isOccupied =
+                          table['status'] == 'occupied' ||
+                          table['status'] == '1' ||
+                          table['status'] == 1;
+
+                      double totalAmount = 0;
+                      final activeOrder =
+                          table['active_order'] ?? table['current_order'];
+                      if (activeOrder != null) {
+                        totalAmount =
+                            double.tryParse(
+                              activeOrder['total_amount'].toString(),
+                            ) ??
+                            0;
+                      }
+
+                      return InkWell(
+                        onTap: () async {
+                          if (isOccupied) {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OrderDetailEditableScreen(
+                                  order: activeOrder,
                                 ),
+                              ),
+                            );
+                            if (result != null) fetchTables();
+                          } else {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductListScreen(
+                                  tableId: int.parse(table['id'].toString()),
+                                ),
+                              ),
+                            );
+                            if (result != null) fetchTables();
+                          }
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          decoration: BoxDecoration(
+                            color: isOccupied
+                                ? const Color(0xFFE3F2FD)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isOccupied
+                                  ? const Color(0xFF1E88E5)
+                                  : Colors.grey[200]!,
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.02),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
                               ),
                             ],
                           ),
-                        ] else ...[
-                          const Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              'Còn trống',
-                              style: TextStyle(color: Colors.grey, fontSize: 12),
-                            ),
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Bàn ${table['name'] ?? table['id']}",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: isOccupied
+                                          ? const Color(0xFF0D47A1)
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                  Icon(
+                                    isOccupied
+                                        ? Icons.local_cafe
+                                        : Icons.check_circle,
+                                    color: isOccupied
+                                        ? Colors.blue
+                                        : Colors.green,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                              if (isOccupied && totalAmount > 0) ...[
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Icon(
+                                      Icons.receipt_long,
+                                      color: Colors.redAccent,
+                                      size: 16,
+                                    ),
+                                    Text(
+                                      "${formatMoney(totalAmount)}đ",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ] else ...[
+                                const Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Text(
+                                    'Còn trống',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                        ],
-                      ],
-                    ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -393,14 +451,19 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
       child: ElevatedButton.icon(
         onPressed: () => applyFilter(statusName),
         icon: Icon(icon, size: 14, color: isSelected ? Colors.white : color),
-        label: Text(statusName, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        label: Text(
+          statusName,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: isSelected ? color : Colors.white,
           foregroundColor: isSelected ? Colors.white : Colors.black87,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: isSelected ? Colors.transparent : Colors.grey[300]!),
+            side: BorderSide(
+              color: isSelected ? Colors.transparent : Colors.grey[300]!,
+            ),
           ),
           padding: const EdgeInsets.symmetric(vertical: 8),
         ),

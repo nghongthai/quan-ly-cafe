@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:quan_ly_cafe/screens/api_constants.dart';
 import 'register_screen.dart';
 import 'admin/admin_home.dart';
 import 'order_list_screen.dart';
 import 'staff_room_screen.dart'; // 🌟 Đã sửa: Import đúng file sơ đồ bàn mới của nhân viên
+import 'package:flutter/foundation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,7 +22,15 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = false;
 
   Future<void> _handleLogin() async {
-    const String apiUrl = "http://10.0.2.2:8000/api/login";
+    String baseUrl;
+    if (kIsWeb) {
+      baseUrl = "http://127.0.0.1:8000/api"; // Nếu chạy trên Web
+    } else {
+      baseUrl = "${ApiConstants.baseUrl}"; // Nếu chạy trên máy ảo Android
+    }
+
+    // 2. Ghép thành đường dẫn API hoàn chỉnh
+    final String apiUrl = "$baseUrl/login";
 
     if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
       _showSnackBar("Vui lòng nhập đầy đủ thông tin");
@@ -45,7 +55,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200 && data['status'] == 'success') {
-        String role = data['data']['role']?.toString().toLowerCase() ?? 'nhân viên';
+        String role =
+            data['data']['role']?.toString().toLowerCase() ?? 'nhân viên';
 
         _showSnackBar("Đăng nhập thành công!");
 
@@ -53,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const AdminHomeScreen()),
-                (route) => false,
+            (route) => false,
           );
         } else {
           // 🌟 ĐÃ SỬA TẠI ĐÂY: Bóc tách id và name từ API để truyền sang StaffRoomScreen
@@ -63,12 +74,10 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (context) => StaffRoomScreen(
-                userId: userId,
-                staffName: staffName,
-              ),
+              builder: (context) =>
+                  StaffRoomScreen(userId: userId, staffName: staffName),
             ),
-                (route) => false,
+            (route) => false,
           );
         }
       } else {
@@ -103,19 +112,39 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: Color(0xFFE8EAF6),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.storefront, size: 80, color: Color(0xFF1A237E)),
+                child: const Icon(
+                  Icons.storefront,
+                  size: 80,
+                  color: Color(0xFF1A237E),
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
                 "Chào Mừng Trở Lại",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1A237E)),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A237E),
+                ),
               ),
               const SizedBox(height: 5),
-              const Text("Đăng nhập để tiếp tục quản lý quán cafe của bạn", style: TextStyle(color: Colors.grey)),
+              const Text(
+                "Đăng nhập để tiếp tục quản lý quán cafe của bạn",
+                style: TextStyle(color: Colors.grey),
+              ),
               const SizedBox(height: 40),
-              _buildTextField(_usernameController, "Tài khoản (Email)", Icons.person),
+              _buildTextField(
+                _usernameController,
+                "Tài khoản (Email)",
+                Icons.person,
+              ),
               const SizedBox(height: 15),
-              _buildTextField(_passwordController, "Mật khẩu", Icons.lock, isPassword: true),
+              _buildTextField(
+                _passwordController,
+                "Mật khẩu",
+                Icons.lock,
+                isPassword: true,
+              ),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -136,7 +165,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   TextButton(
                     onPressed: () {},
-                    child: const Text("Quên mật khẩu?", style: TextStyle(color: Color(0xFF1A237E))),
+                    child: const Text(
+                      "Quên mật khẩu?",
+                      style: TextStyle(color: Color(0xFF1A237E)),
+                    ),
                   ),
                 ],
               ),
@@ -148,19 +180,34 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1A237E),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     elevation: 2,
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Đăng Nhập", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                      : const Text(
+                          "Đăng Nhập",
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 30),
               const Row(
                 children: [
                   Expanded(child: Divider()),
-                  Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text("Hoặc đăng nhập với", style: TextStyle(color: Colors.grey))),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      "Hoặc đăng nhập với",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
                   Expanded(child: Divider()),
                 ],
               ),
@@ -180,11 +227,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Text("Bạn chưa có tài khoản? "),
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterScreen(),
+                        ),
+                      );
                     },
                     child: const Text(
                       "Đăng kí",
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A237E)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A237E),
+                      ),
                     ),
                   ),
                 ],
@@ -196,7 +251,12 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, IconData icon, {bool isPassword = false}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint,
+    IconData icon, {
+    bool isPassword = false,
+  }) {
     return TextField(
       controller: controller,
       obscureText: isPassword,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:quan_ly_cafe/screens/api_constants.dart';
 
 class RoleManagementScreen extends StatefulWidget {
   const RoleManagementScreen({super.key});
@@ -15,10 +16,16 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
   bool isLoading = true;
 
   // Danh mục bộ lọc vai trò
-  List<String> rolesList = ['Tất cả', 'Thu ngân', 'Phục vụ', 'Pha chế', 'Admin'];
+  List<String> rolesList = [
+    'Tất cả',
+    'Thu ngân',
+    'Phục vụ',
+    'Pha chế',
+    'Admin',
+  ];
   String selectedRoleTab = 'Tất cả';
 
-  final String apiUrl = "http://10.0.2.2:8000/api/users";
+  final String apiUrl = "${ApiConstants.baseUrl}/users";
 
   @override
   void initState() {
@@ -50,9 +57,12 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
       if (role == 'Tất cả') {
         filteredStaff = allStaff;
       } else {
-        filteredStaff = allStaff.where((staff) =>
-        staff['role'].toString().toLowerCase() == role.toLowerCase()
-        ).toList();
+        filteredStaff = allStaff
+            .where(
+              (staff) =>
+                  staff['role'].toString().toLowerCase() == role.toLowerCase(),
+            )
+            .toList();
       }
     });
   }
@@ -63,9 +73,7 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
       final response = await http.post(
         Uri.parse("$apiUrl/$staffId"),
         headers: {"Accept": "application/json"},
-        body: {
-          "role": newRole,
-        },
+        body: {"role": newRole},
       );
 
       if (response.statusCode == 200) {
@@ -85,7 +93,10 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Thêm vai trò mới", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Thêm vai trò mới",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: roleNameController,
           decoration: const InputDecoration(
@@ -94,7 +105,10 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Hủy")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Hủy"),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             onPressed: () {
@@ -107,7 +121,7 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
               }
             },
             child: const Text("Thêm", style: TextStyle(color: Colors.white)),
-          )
+          ),
         ],
       ),
     );
@@ -116,7 +130,9 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
   // 4. Hộp thoại ĐỔI VAI TRÒ (Kích hoạt từ menu dấu 3 chấm)
   void _showChangeRoleDialog(dynamic staff) {
     String currentRole = staff['role'] ?? 'Phục vụ';
-    List<String> availableRoles = rolesList.where((r) => r != 'Tất cả').toList();
+    List<String> availableRoles = rolesList
+        .where((r) => r != 'Tất cả')
+        .toList();
 
     if (!availableRoles.contains(currentRole)) {
       availableRoles.add(currentRole);
@@ -125,12 +141,18 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Thay đổi vai trò của:\n${staff['name']}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: Text(
+          "Thay đổi vai trò của:\n${staff['name']}",
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Chọn chức vụ mới:", style: TextStyle(color: Colors.grey)),
+            const Text(
+              "Chọn chức vụ mới:",
+              style: TextStyle(color: Colors.grey),
+            ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
               value: currentRole,
@@ -145,22 +167,30 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Hủy")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Hủy"),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             onPressed: () {
               Navigator.pop(context);
               _updateStaffRole(staff['id'], currentRole);
             },
-            child: const Text("Lưu thay đổi", style: TextStyle(color: Colors.white)),
-          )
+            child: const Text(
+              "Lưu thay đổi",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
         ],
       ),
     );
   }
 
   void _showSnackBar(String msg, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
   }
 
   @override
@@ -175,11 +205,18 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text("Vai trò", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Vai trò",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         actions: [
           // 🌟 Dấu cộng góc trên bên phải để thêm vai trò đúng thiết kế bạn yêu cầu
           IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: Colors.black, size: 28),
+            icon: const Icon(
+              Icons.add_circle_outline,
+              color: Colors.black,
+              size: 28,
+            ),
             onPressed: _showAddRoleDialog,
           ),
           const SizedBox(width: 10),
@@ -213,7 +250,9 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
                         role,
                         style: TextStyle(
                           color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                     ),
@@ -228,65 +267,92 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : filteredStaff.isEmpty
-                ? const Center(child: Text("Không có nhân viên thuộc nhóm vai trò này"))
+                ? const Center(
+                    child: Text("Không có nhân viên thuộc nhóm vai trò này"),
+                  )
                 : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: filteredStaff.length,
-              itemBuilder: (context, index) {
-                final staff = filteredStaff[index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
-                  ),
-                  child: Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 25,
-                        backgroundColor: Color(0xFFEEEEEE),
-                        child: Icon(Icons.person, color: Colors.grey),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(staff['name'] ?? "Không tên",
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            Text("Chức vụ: ${staff['role'] ?? 'Chưa rõ'}",
-                                style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredStaff.length,
+                    itemBuilder: (context, index) {
+                      final staff = filteredStaff[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 10,
+                            ),
                           ],
                         ),
-                      ),
-                      // 🌟 MENU DẤU 3 CHẤM Ở CẠNH PHẢI ĐỂ THAY ĐỔI VAI TRÒ NHƯ BẠN CẦN
-                      PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, color: Colors.grey),
-                        onSelected: (value) {
-                          if (value == 'change_role') {
-                            _showChangeRoleDialog(staff);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'change_role',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit, color: Colors.blue, size: 20),
-                                const SizedBox(width: 10),
-                                Text("Thay đổi vai trò", style: TextStyle(color: Colors.blue)),
+                        child: Row(
+                          children: [
+                            const CircleAvatar(
+                              radius: 25,
+                              backgroundColor: Color(0xFFEEEEEE),
+                              child: Icon(Icons.person, color: Colors.grey),
+                            ),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    staff['name'] ?? "Không tên",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  Text(
+                                    "Chức vụ: ${staff['role'] ?? 'Chưa rõ'}",
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // 🌟 MENU DẤU 3 CHẤM Ở CẠNH PHẢI ĐỂ THAY ĐỔI VAI TRÒ NHƯ BẠN CẦN
+                            PopupMenuButton<String>(
+                              icon: const Icon(
+                                Icons.more_vert,
+                                color: Colors.grey,
+                              ),
+                              onSelected: (value) {
+                                if (value == 'change_role') {
+                                  _showChangeRoleDialog(staff);
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'change_role',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.edit,
+                                        color: Colors.blue,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        "Thay đổi vai trò",
+                                        style: TextStyle(color: Colors.blue),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
