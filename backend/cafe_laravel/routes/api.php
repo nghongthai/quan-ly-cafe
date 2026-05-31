@@ -52,3 +52,4 @@ Route::post('/order/update-item', [OrderController::class, 'updateOrderDetail'])
 Route::get('/me/{id}', [UserController::class, 'show']);
 Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
 Route::get('/dashboard/revenue-report', [DashboardController::class, 'getRevenueReport']);
+Route::get('/dashboard/product-performance', [DashboardController::class, 'getDetailedProductPerformance']);

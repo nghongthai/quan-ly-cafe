@@ -7,12 +7,13 @@ import 'package:quan_ly_cafe/screens/api_constants.dart';
 // Import chuẩn xác theo cấu trúc dự án của bạn
 import 'package:quan_ly_cafe/screens/order_history_screen.dart';
 import 'package:quan_ly_cafe/screens/profile_screen.dart';
-import 'package:quan_ly_cafe/screens/admin/revenue_report_screen.dart'; // 🌟 Đã thêm import màn hình doanh thu mới
+import 'package:quan_ly_cafe/screens/admin/revenue_report_screen.dart';
+import 'package:quan_ly_cafe/screens/admin/product_performance_screen.dart'; // 🌟 Đã thêm import màn hình chi tiết hiệu suất sản phẩm mới
 import '../room_management.dart';
 import '../order_list_screen.dart';
 import '../staff_management_screen.dart';
 import '../role_management_screen.dart';
-import '../login_screen.dart'; // 🌟 Đã thêm import LoginScreen để chuyển hướng khi đăng xuất
+import '../login_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -65,7 +66,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     return NumberFormat("###,###", "vi_VN").format(amount);
   }
 
-  // 🌟 HÀM HIỂN THỊ HỘP THOẠI XÁC NHẬN ĐĂNG XUẤT 2 BƯỚC - ĐÃ SỬA CHUẨN CÚ PHÁP
+  // HỘP THOẠI XÁC NHẬN ĐĂNG XUẤT 2 BƯỚC
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
@@ -84,7 +85,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           content: const Text("Bạn có chắc chắn muốn đăng xuất không?"),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context), // Đóng hộp thoại nếu chọn Hủy
+              onPressed: () => Navigator.pop(context),
               child: const Text(
                 "Hủy",
                 style: TextStyle(
@@ -101,8 +102,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 ),
               ),
               onPressed: () {
-                Navigator.pop(context); // Đóng hộp thoại
-                // Điều hướng xóa sạch các màn hình cũ và đẩy về màn hình Login
+                Navigator.pop(context);
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -253,7 +253,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     Icons.security,
                     ' vai trò',
                     onTap: () {
-                      Navigator.pop(context); // Đóng Drawer
+                      Navigator.pop(context);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -264,15 +264,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   ),
                   _buildMenuItem(Icons.lock_reset, "Đổi mật khẩu"),
                   const Divider(),
-
-                  // 🌟 ĐÃ SỬA TẠI ĐÂY: Khi ấn Đăng xuất sẽ đóng Drawer và hiện Hộp thoại xác nhận
                   _buildMenuItem(
                     Icons.logout,
                     "Đăng xuất",
                     color: Colors.red,
                     onTap: () {
-                      Navigator.pop(context); // Đóng menu hông trước
-                      _showLogoutConfirmation(); // Gọi hộp thoại hiển thị hộp thoại xác nhận
+                      Navigator.pop(context);
+                      _showLogoutConfirmation();
                     },
                   ),
                 ],
@@ -294,7 +292,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🌟 ĐÃ SỬA TẠI ĐÂY: Bọc toàn bộ Container Doanh thu tích lũy trong InkWell để chuyển trang báo cáo
               InkWell(
                 onTap: () {
                   Navigator.push(
@@ -371,14 +368,36 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 ],
               ),
               const SizedBox(height: 25),
-              const Text(
-                "Hiệu suất sản phẩm",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+
+              // 🌟 ĐÃ SỬA TẠI ĐÂY: Thêm hàng Row và nút bấm mũi tên ">" chuyển trang chi tiết
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Hiệu suất sản phẩm",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 18,
+                        color: Colors.grey
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProductPerformanceScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 10), // Giảm bớt khoảng cách một chút cho cân đối
 
               topProducts.isEmpty
                   ? const Padding(
