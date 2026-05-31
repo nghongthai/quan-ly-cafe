@@ -1,12 +1,13 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiConstants {
-  // Hàm này sẽ tự động trả về đúng Base URL tùy theo môi trường đang chạy
   static String get baseUrl {
     if (kIsWeb) {
-      return "http://127.0.0.1:8000/api"; // Cho Web
+      // Dành cho trình duyệt Web
+      return "http://127.0.0.1:8000/api";
     } else {
-      return "${ApiConstants.baseUrl}"; // Cho Máy ảo Android
+      // Dành cho máy ảo Android
+      return "http://10.0.2.2:8000/api";
     }
   }
 }

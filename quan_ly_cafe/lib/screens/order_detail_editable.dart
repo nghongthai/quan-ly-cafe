@@ -137,7 +137,7 @@ class _OrderDetailEditableScreenState extends State<OrderDetailEditableScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => PaymentStaffScreen(
-          orderData:
+          order:
               orderDataForPayment, // Truyền dữ liệu sang constructor nhận dạng Map
         ),
       ),

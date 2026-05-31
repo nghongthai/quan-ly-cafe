@@ -6,9 +6,9 @@ import 'package:quan_ly_cafe/screens/api_constants.dart';
 
 class PaymentStaffScreen extends StatefulWidget {
   final Map<String, dynamic>
-  orderData; // Nhận toàn bộ cục dữ liệu đơn hàng từ Laravel truyền sang
+  order; // Nhận toàn bộ cục dữ liệu đơn hàng từ Laravel truyền sang
 
-  const PaymentStaffScreen({super.key, required this.orderData});
+  const PaymentStaffScreen({super.key, required this.order});
 
   @override
   State<PaymentStaffScreen> createState() => _PaymentStaffScreenState();
@@ -29,15 +29,15 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
       // 10.0.2.2 là localhost dành cho máy ảo Android.
       // Nếu test máy thật, hãy đổi thành IP máy tính của bạn (Ví dụ: 192.168.1.X)
       final response = await http.post(
-        Uri.parse("${ApiConstants.baseUrl}/checkout"),
+        Uri.parse("${ApiConstants.baseUrl}/order/checkout"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "order_id": widget.orderData['id'],
-          "table_id": widget.orderData['table']['id'],
-          "status": "completed", // Gửi trạng thái hoàn thành để lưu doanh thu
+          "order_id": widget.order['id'],
+          "table_id": widget
+              .order['table_id'], // SỬA THÀNH 'table_id' theo đúng chuẩn map nhận được từ Backend
+          "status": "completed",
         }),
       );
-
       if (response.statusCode == 200) {
         if (!mounted) return;
 
@@ -82,7 +82,7 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final order = widget.orderData;
+    final order = widget.order;
     // Chuyển tổng số tiền sang kiểu int/double để tính toán tiền thừa
     double totalAmount = double.parse(order['total_amount'].toString());
     double change = receivedMoney - totalAmount;
