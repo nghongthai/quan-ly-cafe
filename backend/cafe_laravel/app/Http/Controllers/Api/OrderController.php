@@ -134,27 +134,52 @@ class OrderController extends Controller
     // 5. Thanh toán (PHẦN QUAN TRỌNG NHẤT)
     public function checkout(Request $request)
     {
-        $request->validate(['table_id' => 'required|exists:tables,id']);
+        // Nhận linh hoạt table_id hoặc tableId từ Flutter gửi lên
+        $tableId = $request->input('table_id') ?? $request->input('tableId');
 
-        return DB::transaction(function () use ($request) {
-            $order = Order::where('table_id', $request->table_id)
-                          ->where('status', 'pending')->first();
+        if (!$tableId) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Lỗi Backend: Thiếu mã bàn (table_id).'
+            ], 400);
+        }
 
-            if ($order) {
-                // SỬA TẠI ĐÂY: Cập nhật status kèm theo thời gian hiện tại
-                // Để DashboardController dùng whereDate('updated_at', ...) tính được tiền
-                $order->update([
-                    'status' => 'completed',
-                    'updated_at' => now() 
-                ]);
+        try {
+            return DB::transaction(function () use ($tableId) {
+                // 1. Tìm đơn hàng đang chờ của bàn
+                $order = Order::where('table_id', $tableId)
+                              ->where('status', 'pending')
+                              ->first();
 
-                // Trả bàn về trạng thái trống (0)
-                Table::where('id', $request->table_id)->update(['status' => 0]);
+                if ($order) {
+                    // 2. Chuyển sang completed để cộng doanh thu
+                    $order->update([
+                        'status' => 'completed',
+                        'updated_at' => now() 
+                    ]);
 
-                return response()->json(['success' => true, 'message' => 'Thanh toán hoàn tất']);
-            }
-            return response()->json(['success' => false, 'message' => 'Không tìm thấy đơn'], 404);
-        });
+                    // 3. Trả bàn về trạng thái trống
+                    Table::where('id', $tableId)->update(['status' => 0]);
+
+                    return response()->json([
+                        'success' => true, 
+                        'message' => 'Thanh toán hoàn tất',
+                        'data' => $order
+                    ]);
+                }
+                
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Không tìm thấy đơn hàng.'
+                ], 404);
+            });
+        } catch (\Exception $e) {
+            // Bắt lỗi Database nếu có để báo về Flutter
+            return response()->json([
+                'success' => false, 
+                'message' => 'Lỗi hệ thống: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // 6. Lọc danh sách đơn hàng
