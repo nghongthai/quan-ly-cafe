@@ -7,6 +7,7 @@ import 'package:quan_ly_cafe/screens/api_constants.dart';
 // Import chuẩn xác theo cấu trúc dự án của bạn
 import 'package:quan_ly_cafe/screens/order_history_screen.dart';
 import 'package:quan_ly_cafe/screens/profile_screen.dart';
+import 'package:quan_ly_cafe/screens/admin/revenue_report_screen.dart'; // 🌟 Đã thêm import màn hình doanh thu mới
 import '../room_management.dart';
 import '../order_list_screen.dart';
 import '../staff_management_screen.dart';
@@ -64,7 +65,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     return NumberFormat("###,###", "vi_VN").format(amount);
   }
 
-  // 🌟 HÀM HIỂN THỊ HỘP THOẠI XÁC NHẬN ĐĂNG XUẤT 2 BƯỚC
+  // 🌟 HÀM HIỂN THỊ HỘP THOẠI XÁC NHẬN ĐĂNG XUẤT 2 BƯỚC - ĐÃ SỬA CHUẨN CÚ PHÁP
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
@@ -83,8 +84,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           content: const Text("Bạn có chắc chắn muốn đăng xuất không?"),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(context), // Đóng hộp thoại nếu chọn Hủy
+              onPressed: () => Navigator.pop(context), // Đóng hộp thoại nếu chọn Hủy
               child: const Text(
                 "Hủy",
                 style: TextStyle(
@@ -106,7 +106,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  (route) => false,
+                      (route) => false,
                 );
               },
               child: const Text(
@@ -283,133 +283,145 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       ),
       body: isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF3B67D1)),
-            )
+        child: CircularProgressIndicator(color: Color(0xFF3B67D1)),
+      )
           : RefreshIndicator(
-              onRefresh: fetchDashboardStats,
-              color: const Color(0xFF3B67D1),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF3B67D1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Doanh thu tích lũy",
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "${formatMoney(revenue)} đ",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            "Cập nhật theo thời gian thực",
-                            style: TextStyle(
-                              color: Colors.white60,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
+        onRefresh: fetchDashboardStats,
+        color: const Color(0xFF3B67D1),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🌟 ĐÃ SỬA TẠI ĐÂY: Bọc toàn bộ Container Doanh thu tích lũy trong InkWell để chuyển trang báo cáo
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RevenueReportScreen(),
                     ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        _buildStatCard(
-                          "Số đơn hàng",
-                          ordersCount.toString(),
-                          Icons.arrow_upward,
-                          Colors.green,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const OrderListScreen(),
-                              ),
-                            );
-                          },
+                  );
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B67D1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Doanh thu tích lũy",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
                         ),
-                        const SizedBox(width: 15),
-                        _buildStatCard(
-                          "Phòng bàn",
-                          activeTablesCount.toString(),
-                          null,
-                          Colors.black,
-                          subTitle: "Đang hoạt động",
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 25),
-                    const Text(
-                      "Hiệu suất sản phẩm",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                    const SizedBox(height: 15),
-
-                    topProducts.isEmpty
-                        ? const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20),
-                            child: Center(
-                              child: Text(
-                                "Chưa có sản phẩm nào được bán",
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: topProducts.length,
-                            itemBuilder: (context, index) {
-                              final item = topProducts[index];
-                              return _buildProductItem(
-                                item['name'] ?? "Sản phẩm",
-                                "Đã bán: ${item['sold']}",
-                                index == 0
-                                    ? Colors.brown
-                                    : (index == 1
-                                          ? Colors.orange
-                                          : Colors.blue),
-                              );
-                            },
-                          ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        "${formatMoney(revenue)} đ",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        "Cập nhật theo thời gian thực",
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  _buildStatCard(
+                    "Số đơn hàng",
+                    ordersCount.toString(),
+                    Icons.arrow_upward,
+                    Colors.green,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const OrderListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 15),
+                  _buildStatCard(
+                    "Phòng bàn",
+                    activeTablesCount.toString(),
+                    null,
+                    Colors.black,
+                    subTitle: "Đang hoạt động",
+                  ),
+                ],
+              ),
+              const SizedBox(height: 25),
+              const Text(
+                "Hiệu suất sản phẩm",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              topProducts.isEmpty
+                  ? const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Text(
+                    "Chưa có sản phẩm nào được bán",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              )
+                  : ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: topProducts.length,
+                itemBuilder: (context, index) {
+                  final item = topProducts[index];
+                  return _buildProductItem(
+                    item['name'] ?? "Sản phẩm",
+                    "Đã bán: ${item['sold']}",
+                    index == 0
+                        ? Colors.brown
+                        : (index == 1
+                        ? Colors.orange
+                        : Colors.blue),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildStatCard(
-    String title,
-    String value,
-    IconData? icon,
-    Color iconColor, {
-    String? subTitle,
-    VoidCallback? onTap,
-  }) {
+      String title,
+      String value,
+      IconData? icon,
+      Color iconColor, {
+        String? subTitle,
+        VoidCallback? onTap,
+      }) {
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -498,11 +510,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   }
 
   Widget _buildMenuItem(
-    IconData icon,
-    String title, {
-    Color color = Colors.black,
-    VoidCallback? onTap,
-  }) {
+      IconData icon,
+      String title, {
+        Color color = Colors.black,
+        VoidCallback? onTap,
+      }) {
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(
