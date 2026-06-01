@@ -3,7 +3,8 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:quan_ly_cafe/screens/api_constants.dart';
-import 'payment_screen.dart'; // ✅ THÊM ĐÚNG FILE THANH TOÁN ĐỂ ĐIỀU HƯỚNG
+import 'payment_screen.dart';
+
 
 class OrderDetailEditableScreen extends StatefulWidget {
   final dynamic order;
@@ -136,10 +137,7 @@ class _OrderDetailEditableScreenState extends State<OrderDetailEditableScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PaymentStaffScreen(
-          order:
-              orderDataForPayment, // Truyền dữ liệu sang constructor nhận dạng Map
-        ),
+        builder: (context) => PaymentStaffScreen(orderData: orderDataForPayment),
       ),
     ).then((value) {
       // Sau khi xử lý thanh toán xong và back về, đóng luôn màn hình chi tiết này

@@ -255,36 +255,7 @@ class OrderDetailScreen extends StatelessWidget {
             ),
           ),
           // --- NÚT THANH TOÁN ---
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: order['status'] == 'completed'
-                    ? null // Nếu đã thanh toán rồi thì khóa nút
-                    : () => _handleCheckout(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.brown[600],
-                  disabledBackgroundColor: Colors.grey,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  order['status'] == 'completed'
-                      ? "ĐÃ THANH TOÁN"
-                      : "THANH TOÁN",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ),
-          ),
+
         ],
       ),
     );
