@@ -8,6 +8,7 @@ import 'order_detail_editable.dart';
 import 'order_list_screen.dart';
 import 'profile_screen.dart'; // 🌟 Đã thêm import trang thông tin cá nhân
 import 'login_screen.dart';
+import 'end_of_day_report_screen.dart';
 
 class StaffRoomScreen extends StatefulWidget {
   final int userId; // 🌟 Nhận ID nhân viên truyền từ LoginScreen
@@ -180,11 +181,15 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.lock_clock, color: Colors.teal),
-              title: const Text('Đóng ca làm việc'),
+              title: const Text('Báo cáo cuối ngày'),
               onTap: () {
-                Navigator.pop(context);
-                // Bạn có thể thêm Navigator chuyển sang trang đóng ca của bạn ở đây
-              },
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const EndOfDayReportScreen(),
+                  ),
+                );
+              }, // 🌟 ĐÃ SỬA: Chỗ này phải là }, chứ không phải là )
             ),
             // 🌟 ĐÃ CẬP NHẬT: Nhấn vào thông tin cá nhân sẽ chuyển hướng vào ProfileScreen cùng userId
             ListTile(

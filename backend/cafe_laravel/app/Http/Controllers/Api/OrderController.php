@@ -133,30 +133,33 @@ class OrderController extends Controller
 
     // 5. Thanh toán (PHẦN QUAN TRỌNG NHẤT)
     public function checkout(Request $request)
-    {
-        $request->validate(['table_id' => 'required|exists:tables,id']);
+{
+    // 🌟 ĐÃ CẬP NHẬT: Thêm kiểm tra dữ liệu payment_method gửi lên (nếu không truyền mặc định là Tiền mặt)
+    $request->validate([
+        'table_id' => 'required|exists:tables,id',
+        'payment_method' => 'nullable|string'
+    ]);
 
-        return DB::transaction(function () use ($request) {
-            $order = Order::where('table_id', $request->table_id)
-                          ->where('status', 'pending')->first();
+    return DB::transaction(function () use ($request) {
+        $order = Order::where('table_id', $request->table_id)
+                      ->where('status', 'pending')->first();
 
-            if ($order) {
-                // SỬA TẠI ĐÂY: Cập nhật status kèm theo thời gian hiện tại
-                // Để DashboardController dùng whereDate('updated_at', ...) tính được tiền
-                $order->update([
-                    'status' => 'completed',
-                    'updated_at' => now() 
-                ]);
+        if ($order) {
+            // 🌟 SỬA TẠI ĐÂY: Thêm 'payment_method' vào mảng update để lưu xuống database
+            $order->update([
+                'status' => 'completed',
+                'updated_at' => now(),
+                'payment_method' => $request->input('payment_method', 'Tiền mặt') // Ăn theo dữ liệu nút bấm từ Flutter gửi sang
+            ]);
 
-                // Trả bàn về trạng thái trống (0)
-                Table::where('id', $request->table_id)->update(['status' => 0]);
+            // Trả bàn về trạng thái trống (0)
+            Table::where('id', $request->table_id)->update(['status' => 0]);
 
-                return response()->json(['success' => true, 'message' => 'Thanh toán hoàn tất']);
-            }
-            return response()->json(['success' => false, 'message' => 'Không tìm thấy đơn'], 404);
-        });
-    }
-
+            return response()->json(['success' => true, 'message' => 'Thanh toán hoàn tất']);
+        }
+        return response()->json(['success' => false, 'message' => 'Không tìm thấy đơn'], 404);
+    });
+}
     // 6. Lọc danh sách đơn hàng
     public function listOrders(Request $request)
     {

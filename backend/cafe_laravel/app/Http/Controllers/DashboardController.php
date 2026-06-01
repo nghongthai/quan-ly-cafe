@@ -68,7 +68,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * 2. Xử lý bộ lọc dữ liệu thực tế cho RevenueReportScreen (Đã nâng cấp đào sâu xem từng ngày trong tuần con)
+     * 2. Xử lý bộ lọc dữ liệu thực tế cho RevenueReportScreen (Đã bổ sung trường 'date' cho mọi bộ lọc)
      */
     public function getRevenueReport(Request $request)
     {
@@ -99,11 +99,12 @@ class DashboardController extends Controller
                     ->groupBy('hour')
                     ->orderBy('hour', 'asc')
                     ->get()
-                    ->map(function ($item) {
+                    ->map(function ($item) use ($today) {
                         return [
                             'time' => sprintf("%02d:00 - %02d:00", $item->hour, $item->hour + 1),
                             'revenue' => (double) $item->revenue,
                             'orders' => (int) $item->orders,
+                            'date' => $today, // 🌟 Gài ngày hôm nay để khi bấm vào khung giờ vẫn bốc trọn đơn trong ngày
                         ];
                     });
 
@@ -115,6 +116,7 @@ class DashboardController extends Controller
                 $totalOrders = (int) (clone $baseQuery)->whereBetween('created_at', [$startOfWeek, $endOfWeek])->count();
 
                 $daysData = Order::select(
+                        DB::raw('DATE(created_at) as order_date'), // 🌟 Bổ sung bốc ngày thực tế
                         DB::raw('DAYNAME(created_at) as day_name'),
                         DB::raw('DAYOFWEEK(created_at) as day_code'),
                         DB::raw('SUM(total_amount) as revenue'),
@@ -122,8 +124,8 @@ class DashboardController extends Controller
                     )
                     ->where('status', 'completed')
                     ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
-                    ->groupBy('day_name', 'day_code')
-                    ->orderBy('day_code', 'asc')
+                    ->groupBy('order_date', 'day_name', 'day_code')
+                    ->orderBy('order_date', 'asc')
                     ->get();
 
                 $vietnameseDays = [
@@ -136,13 +138,14 @@ class DashboardController extends Controller
                         'time' => $vietnameseDays[$item->day_name] ?? $item->day_name,
                         'revenue' => (double) $item->revenue,
                         'orders' => (int) $item->orders,
+                        'date' => $item->order_date, // 🌟 Trả về ngày yyyy-MM-dd chính xác của Thứ đó
                     ];
                 });
 
             } else {
-                // 🔥 ĐÃ CẬP NHẬT: Xử lý hiển thị doanh thu TỪNG NGÀY của một TUẦN con cụ thể khi chọn bộ lọc THÁNG
+                // Xử lý hiển thị doanh thu TỪNG NGÀY của một TUẦN con cụ thể khi chọn bộ lọc THÁNG
                 preg_match('/(\d+)/', $subWeek, $matches);
-                $weekNum = isset($matches[1]) ? (int)$matches[1] : 1; // Tách lấy số tuần: 1, 2, 3, 4
+                $weekNum = isset($matches[1]) ? (int)$matches[1] : 1; 
 
                 // Định vị ngày bắt đầu và kết thúc của tuần con trong tháng hiện hành
                 $weekStart = Carbon::now('Asia/Ho_Chi_Minh')->startOfMonth()->addWeeks($weekNum - 1)->startOfDay();
@@ -150,7 +153,6 @@ class DashboardController extends Controller
                     ? Carbon::now('Asia/Ho_Chi_Minh')->endOfMonth()->endOfDay() 
                     : Carbon::now('Asia/Ho_Chi_Minh')->startOfMonth()->addWeeks($weekNum)->subSecond()->endOfDay();
 
-                // Tính tổng doanh thu & đơn hàng của riêng tuần con được click để hiển thị lên thẻ Card lớn phía trên
                 $totalRevenue = (double) (clone $baseQuery)->whereBetween('created_at', [$weekStart, $weekEnd])->sum('total_amount');
                 $totalOrders = (int) (clone $baseQuery)->whereBetween('created_at', [$weekStart, $weekEnd])->count();
 
@@ -159,7 +161,6 @@ class DashboardController extends Controller
                     'Thursday' => 'Thứ Năm', 'Friday' => 'Thứ Sáu', 'Saturday' => 'Thứ Bảy', 'Sunday' => 'Chủ Nhật'
                 ];
 
-                // Chạy vòng lặp duyệt qua từng ngày từ ngày đầu tuần tới ngày cuối tuần
                 $currentDay = $weekStart->copy();
                 while ($currentDay->lte($weekEnd)) {
                     $dayStr = $currentDay->format('Y-m-d');
@@ -173,14 +174,14 @@ class DashboardController extends Controller
                         ->whereDate('created_at', $dayStr)
                         ->count();
 
-                    // Đẩy dữ liệu thống kê của ngày này vào danh sách chi tiết bên dưới
                     $details[] = [
                         'time' => $dayName . " (" . $currentDay->format('d/m') . ")",
                         'revenue' => $dayRevenue,
-                        'orders' => $dayOrders
+                        'orders' => $dayOrders,
+                        'date' => $dayStr // 🌟 Trả về ngày yyyy-MM-dd chính xác trong tháng
                     ];
 
-                    $currentDay->addDay(); // Tiến sang ngày kế tiếp
+                    $currentDay->addDay(); 
                 }
             }
 
@@ -200,7 +201,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * 3. API MỚI: Xử lý hiển thị toàn bộ hiệu suất sản phẩm (Lọc theo Ngày/Tuần/Tháng)
+     * 3. Lọc hiệu suất sản phẩm (Lọc theo Ngày/Tuần/Tháng)
      */
     public function getDetailedProductPerformance(Request $request)
     {
@@ -210,7 +211,6 @@ class DashboardController extends Controller
             
             $query = Order::where('status', 'completed');
             
-            // Xử lý logic lọc thời gian
             if ($type == 'ngày') {
                 $query->whereDate('created_at', $now->format('Y-m-d'));
             } else if ($type == 'tuần') {
@@ -220,10 +220,8 @@ class DashboardController extends Controller
                       ->whereYear('created_at', $now->year);
             }
 
-            // Lấy danh sách ID của các đơn hàng hợp lệ
             $orderIds = $query->pluck('id');
 
-            // Tính tổng số lượng bán ra của tất cả các sản phẩm có trong các đơn hàng trên
             $products = OrderDetail::select('product_id', DB::raw('SUM(quantity) as sold'))
                 ->whereIn('order_id', $orderIds)
                 ->with('product') 
@@ -241,6 +239,81 @@ class DashboardController extends Controller
             return response()->json([
                 'filter' => $type,
                 'data' => $products
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * 4. API MỚI BỔ SUNG: Lấy toàn bộ danh sách đơn hàng đã hoàn thành của một Ngày cụ thể
+     * Đường dẫn gọi: /api/dashboard/orders-by-date?date=YYYY-MM-DD
+     */
+    public function getOrdersByDate(Request $request)
+    {
+        try {
+            $date = $request->query('date');
+
+            if (!$date) {
+                return response()->json(['error' => 'Thiếu thông tin ngày lọc dữ liệu'], 400);
+            }
+
+            // Lấy tất cả đơn hàng đã hoàn thành trong ngày được chọn
+            $orders = Order::with(['table', 'orderDetails.product'])
+                ->whereDate('created_at', $date)
+                ->where('status', 'completed')
+                ->orderBy('updated_at', 'desc') // Đơn mới làm xong đẩy lên đầu
+                ->get();
+
+            return response()->json($orders, 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * 🌟 5. API MỚI BỔ SUNG: Lấy báo cáo tổng kết cuối ngày tinh gọn
+     * (Chỉ gồm khối Phương thức thanh toán & Tổng kết bán hàng theo đúng yêu cầu)
+     * Đường dẫn gọi: /api/dashboard/end-of-day-report
+     */
+    /**
+     * 🌟 API Lấy báo cáo tổng kết cuối ngày (Bản nâng cấp chống lệch múi giờ hệ thống)
+     */
+    public function getEndOfDayReport()
+    {
+        try {
+            // Dùng cặp thời gian đầu ngày và cuối ngày chuẩn múi giờ Việt Nam để quét sạch đơn
+            $startOfDay = Carbon::now('Asia/Ho_Chi_Minh')->startOfDay();
+            $endOfDay = Carbon::now('Asia/Ho_Chi_Minh')->endOfDay();
+
+            // Lọc chính xác các đơn hoàn thành trong khung giờ ngày hôm nay
+            $todayOrders = Order::whereBetween('created_at', [$startOfDay, $endOfDay])
+                                ->where('status', 'completed')
+                                ->get();
+
+            $totalOrders = $todayOrders->count();
+            
+            // Tính toán gom nhóm dòng tiền từ Collection
+            $tienMat = (double) $todayOrders->where('payment_method', 'Tiền mặt')->sum('total_amount');
+            $chuyenKhoan = (double) $todayOrders->where('payment_method', 'Chuyển khoản')->sum('total_amount');
+            $tongThu = $tienMat + $chuyenKhoan;
+
+            // Tính tổng số món nước bán ra
+            $orderIds = $todayOrders->pluck('id');
+            $tongSanPham = (int) OrderDetail::whereIn('order_id', $orderIds)->sum('quantity');
+
+            return response()->json([
+                'tien_mat' => $tienMat,
+                'chuyen_khoan' => $chuyenKhoan,
+                'the' => 0,
+                'vi_dien_tu' => 0,
+                'diem' => 0,
+                'so_luong_hoa_don' => $totalOrders,
+                'so_luong_san_pham' => $tongSanPham,
+                'so_khach' => $totalOrders, 
+                'doanh_thu_uoc_tinh' => $tongThu
             ], 200);
 
         } catch (\Exception $e) {

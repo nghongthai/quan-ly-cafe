@@ -12,7 +12,8 @@ class Order extends Model
     protected $fillable = [
         'table_id',
         'total_amount',
-        'status', // 'pending', 'completed', 'cancelled'
+        'status',
+        'payment_method', // 'cash', 'card', 'online'
     ];
 
     /**

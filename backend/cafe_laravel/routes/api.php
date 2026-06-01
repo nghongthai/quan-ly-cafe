@@ -52,4 +52,7 @@ Route::post('/order/update-item', [OrderController::class, 'updateOrderDetail'])
 Route::get('/me/{id}', [UserController::class, 'show']);
 Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
 Route::get('/dashboard/revenue-report', [DashboardController::class, 'getRevenueReport']);
+// API lấy danh sách toàn bộ hóa đơn chi tiết của một ngày cụ thể
+Route::get('/dashboard/orders-by-date', [App\Http\Controllers\DashboardController::class, 'getOrdersByDate']);
 Route::get('/dashboard/product-performance', [DashboardController::class, 'getDetailedProductPerformance']);
+Route::get('/dashboard/end-of-day-report', [App\Http\Controllers\DashboardController::class, 'getEndOfDayReport']);

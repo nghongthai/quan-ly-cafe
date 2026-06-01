@@ -5,8 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:quan_ly_cafe/screens/api_constants.dart';
 
 class PaymentStaffScreen extends StatefulWidget {
-  final Map<String, dynamic>
-  orderData; // Nhận toàn bộ cục dữ liệu đơn hàng từ Laravel truyền sang
+  final Map<String, dynamic> orderData; // Nhận toàn bộ cục dữ liệu đơn hàng từ Laravel truyền sang
 
   const PaymentStaffScreen({super.key, required this.orderData});
 
@@ -17,24 +16,31 @@ class PaymentStaffScreen extends StatefulWidget {
 class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
   bool isProcessing = false;
   String selectedPaymentMethod = 'Tiền mặt'; // Mặc định chọn tiền mặt
-  final TextEditingController _receivedMoneyController =
-      TextEditingController();
+  final TextEditingController _receivedMoneyController = TextEditingController();
   int receivedMoney = 0;
+
+  // 🌟 ĐÃ ĐỒNG BỘ: Cấu hình thông tin tài khoản VietQR của bạn
+  final String bankId = "BIDV";
+  final String accountNo = "4880687152";
+  final String accountName = "NGUYEN HONG THAI";
+
+  bool isQrGenerated = false;
+  String qrUrl = "";
 
   // Hàm xử lý thanh toán thực tế gọi tới Laravel Backend
   Future<void> processPayment() async {
     setState(() => isProcessing = true);
 
     try {
-      // 10.0.2.2 là localhost dành cho máy ảo Android.
-      // Nếu test máy thật, hãy đổi thành IP máy tính của bạn (Ví dụ: 192.168.1.X)
+      // 🌟 ĐÃ SỬA: Đổi URL thành /order/checkout để khớp hoàn toàn với Backend Laravel
       final response = await http.post(
-        Uri.parse("${ApiConstants.baseUrl}/checkout"),
+        Uri.parse("${ApiConstants.baseUrl}/order/checkout"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "order_id": widget.orderData['id'],
           "table_id": widget.orderData['table']['id'],
-          "status": "completed", // Gửi trạng thái hoàn thành để lưu doanh thu
+          "status": "completed",
+          "payment_method": selectedPaymentMethod, // 🌟 ĐÃ BỔ SUNG: Truyền phương thức thanh toán lên Backend
         }),
       );
 
@@ -49,10 +55,10 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
           ),
         );
 
-        // Quay thẳng về màn hình chính đầu tiên (Sơ đồ bàn ăn đã được cập nhật trống)
-        Navigator.popUntil(context, (route) => route.isFirst);
+        // Quay lại màn hình trước đó (Sơ đồ phòng bàn)
+        Navigator.pop(context);
       } else {
-        throw Exception("Không thể cập nhật hóa đơn lên hệ thống.");
+        throw Exception("Mã phản hồi từ máy chủ: ${response.statusCode}. Không thể cập nhật hóa đơn.");
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,10 +74,7 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
 
   // Hàm format định dạng tiền tệ Việt Nam (VD: 150,000đ)
   String formatMoney(dynamic amount) {
-    return NumberFormat(
-      "###,###",
-      "vi_VN",
-    ).format(double.parse(amount.toString()));
+    return NumberFormat("###,###", "vi_VN").format(double.parse(amount.toString()));
   }
 
   @override
@@ -83,7 +86,6 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
   @override
   Widget build(BuildContext context) {
     final order = widget.orderData;
-    // Chuyển tổng số tiền sang kiểu int/double để tính toán tiền thừa
     double totalAmount = double.parse(order['total_amount'].toString());
     double change = receivedMoney - totalAmount;
     if (change < 0) change = 0;
@@ -127,10 +129,7 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           color: const Color(0xFFE3F2FD),
                           borderRadius: BorderRadius.circular(12),
@@ -195,9 +194,7 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                             ),
                             Text(
                               "${formatMoney(item['price'])}đ",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: const TextStyle(fontWeight: FontWeight.w500),
                             ),
                           ],
                         ),
@@ -237,27 +234,18 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      _buildPaymentMethodOption(
-                        'Tiền mặt',
-                        Icons.payments_outlined,
-                      ),
+                      _buildPaymentMethodOption('Tiền mặt', Icons.payments_outlined),
                       const SizedBox(width: 12),
-                      _buildPaymentMethodOption(
-                        'Chuyển khoản',
-                        Icons.qr_code_2,
-                      ),
+                      _buildPaymentMethodOption('Chuyển khoản', Icons.qr_code_2),
                     ],
                   ),
                   const SizedBox(height: 20),
 
-                  // Xử lý giao diện động theo từng phương thức
+                  // Hiển thị form động tùy theo phương thức chọn lựa
                   if (selectedPaymentMethod == 'Tiền mặt') ...[
                     const Text(
                       'Tiền khách đưa (VNĐ)',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -267,13 +255,8 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                         filled: true,
                         fillColor: const Color(0xFFF8F9FA),
                         hintText: 'Nhập số tiền...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                       onChanged: (value) {
                         setState(() {
@@ -285,47 +268,67 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Tiền thừa trả khách:',
-                          style: TextStyle(fontSize: 15),
-                        ),
+                        const Text('Tiền thừa trả khách:', style: TextStyle(fontSize: 15)),
                         Text(
                           '${formatMoney(change)}đ',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.redAccent,
-                          ),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.redAccent),
                         ),
                       ],
                     ),
                   ] else ...[
-                    // Nếu chọn chuyển khoản hiển thị khung quét mã QR
+                    // Hiển thị ô quét mã VietQR động
                     Center(
-                      child: Container(
-                        height: 160,
-                        width: 160,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          border: Border.all(color: Colors.grey[300]!),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: Column(
+                      child: GestureDetector(
+                        onTap: () {
+                          final String orderId = order['id'].toString();
+                          final int amount = totalAmount.toInt();
+                          final String description = Uri.encodeComponent("Thanh toan don hang $orderId");
+                          final String encodedName = Uri.encodeComponent(accountName);
+
+                          setState(() {
+                            qrUrl = "https://img.vietqr.io/image/$bankId-$accountNo-qr_only.jpg?amount=$amount&addInfo=$description&accountName=$encodedName";
+                            isQrGenerated = true;
+                          });
+                        },
+                        child: Container(
+                          height: 180,
+                          width: 180,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            border: Border.all(color: Colors.grey[300]!, width: 1.5),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: isQrGenerated
+                              ? ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.network(
+                              qrUrl,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return const Center(
+                                  child: CircularProgressIndicator(color: Color(0xFF3B67D9)),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Text("Lỗi kết nối ảnh QR", style: TextStyle(fontSize: 12)),
+                                );
+                              },
+                            ),
+                          )
+                              : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.qr_code_scanner,
-                                size: 40,
-                                color: Colors.grey,
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'QUÉT MÃ QR',
+                              Icon(Icons.qr_code_scanner, size: 44, color: Colors.grey[600]),
+                              const SizedBox(height: 10),
+                              const Text(
+                                'ẤN ĐỂ TẠO MÃ QR',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: Color(0xFF3B67D9),
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                             ],
@@ -338,7 +341,7 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
               ),
             ),
 
-            // Nút bấm hành động xác nhận thanh toán cuối trang
+            // Nút bấm xác nhận thanh toán thủ công luôn mở rộng ở dưới cùng màn hình
             Padding(
               padding: const EdgeInsets.all(16),
               child: SizedBox(
@@ -348,20 +351,14 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
                   onPressed: isProcessing ? null : processPayment,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3B67D9),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: isProcessing
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
-                          'HOÀN TẤT THANH TOÁN',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+                    'HOÀN TẤT THANH TOÁN',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
                 ),
               ),
             ),
@@ -371,7 +368,7 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
     );
   }
 
-  // Widget vẽ các ô chọn phương thức thanh toán dạng nút nhấn tab
+  // Widget hiển thị tab chọn phương thức thanh toán dạng nút bấm nhấn tab
   Widget _buildPaymentMethodOption(String method, IconData icon) {
     bool isSelected = selectedPaymentMethod == method;
     return Expanded(
@@ -381,6 +378,9 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
           if (method == 'Chuyển khoản') {
             _receivedMoneyController.clear();
             receivedMoney = 0;
+          } else {
+            isQrGenerated = false;
+            qrUrl = "";
           }
         }),
         child: Container(
@@ -396,11 +396,7 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: isSelected ? const Color(0xFF3B67D9) : Colors.grey,
-                size: 20,
-              ),
+              Icon(icon, color: isSelected ? const Color(0xFF3B67D9) : Colors.grey, size: 20),
               const SizedBox(width: 8),
               Text(
                 method,

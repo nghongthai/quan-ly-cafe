@@ -275,7 +275,7 @@ function renderConfirm() {
 /* ============ APP CONTROLLER ============ */
 const App = {
 
-  async init() {
+  async init() {S
     showScreen('screen-loading');
 
     const params = new URLSearchParams(window.location.search);
@@ -284,7 +284,7 @@ const App = {
     // Phương án 1: Tự động chọn Bàn 1 mặc định khi chạy thử nghiệm (Không có ?table= trên link)
     if (!tableId) {
       console.warn("Không tìm thấy tham số '?table=...' trên URL. Tự động gán Bàn 1 để chạy thử nghiệm.");
-      tableId = '1';
+      tableId = '2';
     }
 
     State.tableId = tableId;
