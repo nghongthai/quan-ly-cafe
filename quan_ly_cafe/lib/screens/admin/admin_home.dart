@@ -359,11 +359,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   ),
                   const SizedBox(width: 15),
                   _buildStatCard(
-                    "Phòng bàn",
+                    "B\u00e0n \u0111ang ho\u1ea1t \u0111\u1ed9ng",
                     activeTablesCount.toString(),
                     null,
                     Colors.black,
-                    subTitle: "Đang hoạt động",
+                    subTitle: "C\u00f3 kh\u00e1ch / c\u00f3 \u0111\u01a1n",
                   ),
                 ],
               ),
@@ -418,11 +418,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   return _buildProductItem(
                     item['name'] ?? "Sản phẩm",
                     "Đã bán: ${item['sold']}",
-                    index == 0
-                        ? Colors.brown
-                        : (index == 1
-                        ? Colors.orange
-                        : Colors.blue),
+                    item['image'] ?? '',
                   );
                 },
               ),
@@ -484,7 +480,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 
-  Widget _buildProductItem(String name, String sold, Color iconBgColor) {
+  Widget _buildProductItem(String name, String sold, String imageName) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -497,14 +493,28 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: iconBgColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              "assets/images/$imageName",
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF2FF),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.local_drink,
+                    color: Color(0xFF3B67D1),
+                  ),
+                );
+              },
             ),
-            child: Icon(Icons.local_drink, color: iconBgColor),
           ),
           const SizedBox(width: 15),
           Column(

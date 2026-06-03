@@ -12,8 +12,8 @@ class RevenueReportScreen extends StatefulWidget {
 }
 
 class _RevenueReportScreenState extends State<RevenueReportScreen> {
-  String selectedFilter = 'Ngày';
-  String selectedSubWeek = 'Tuần 1';
+  String selectedFilter = 'Ng\u00e0y';
+  DateTimeRange? selectedDateRange;
 
   bool isLoading = false;
   double totalRevenue = 0;
@@ -34,10 +34,17 @@ class _RevenueReportScreenState extends State<RevenueReportScreen> {
   Future<void> fetchRevenueReport() async {
     setState(() => isLoading = true);
     String filterType = selectedFilter.toLowerCase();
-    String subWeekParam = selectedFilter == 'Tháng' ? selectedSubWeek : '';
 
     try {
-      final url = Uri.parse("${ApiConstants.baseUrl}/dashboard/revenue-report?type=$filterType&sub_week=$subWeekParam");
+      Uri url;
+      if (selectedDateRange != null) {
+        final startDate = DateFormat('yyyy-MM-dd').format(selectedDateRange!.start);
+        final endDate = DateFormat('yyyy-MM-dd').format(selectedDateRange!.end);
+        url = Uri.parse("${ApiConstants.baseUrl}/dashboard/revenue-report?type=custom&start_date=$startDate&end_date=$endDate");
+      } else {
+        url = Uri.parse("${ApiConstants.baseUrl}/dashboard/revenue-report?type=$filterType");
+      }
+
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -82,6 +89,331 @@ class _RevenueReportScreenState extends State<RevenueReportScreen> {
     });
   }
 
+  Future<void> _pickDateRange({required String filter, required int maxDays}) async {
+    final today = DateTime.now();
+    final currentRangeDays = selectedDateRange == null
+        ? 0
+        : selectedDateRange!.end.difference(selectedDateRange!.start).inDays + 1;
+    final canReuseRange = selectedDateRange != null && currentRangeDays <= maxDays;
+    DateTime visibleMonth = selectedDateRange?.start ?? today;
+    visibleMonth = DateTime(visibleMonth.year, visibleMonth.month, 1);
+    DateTime? tempStart = canReuseRange ? selectedDateRange!.start : null;
+    DateTime? tempEnd = canReuseRange ? selectedDateRange!.end : null;
+    int maxSelectableDays = maxDays;
+    String? rangeWarning;
+
+    DateTime onlyDate(DateTime date) => DateTime(date.year, date.month, date.day);
+    bool sameDay(DateTime a, DateTime b) =>
+        a.year == b.year && a.month == b.month && a.day == b.day;
+
+    final picked = await showModalBottomSheet<DateTimeRange>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final safeToday = onlyDate(today);
+            final monthStart = DateTime(visibleMonth.year, visibleMonth.month, 1);
+            final monthEnd = DateTime(visibleMonth.year, visibleMonth.month + 1, 0);
+            final leadingEmptyCells = monthStart.weekday % 7;
+            final totalCells = leadingEmptyCells + monthEnd.day;
+            final rowCount = (totalCells / 7).ceil();
+
+            bool isSelectedStart(DateTime date) {
+              return tempStart != null && sameDay(date, tempStart!);
+            }
+
+            bool isSelectedEnd(DateTime date) {
+              return tempEnd != null && sameDay(date, tempEnd!);
+            }
+
+            bool isInSelectedRange(DateTime date) {
+              if (tempStart == null || tempEnd == null) return false;
+              final value = onlyDate(date);
+              final start = onlyDate(tempStart!);
+              final end = onlyDate(tempEnd!);
+              return value.isAfter(start) && value.isBefore(end);
+            }
+
+            void selectDate(DateTime date) {
+              if (date.isAfter(safeToday)) return;
+              setSheetState(() {
+                rangeWarning = null;
+                if (maxSelectableDays == 1) {
+                  tempStart = date;
+                  tempEnd = date;
+                  visibleMonth = DateTime(date.year, date.month, 1);
+                  return;
+                }
+
+                if (tempStart == null || tempEnd != null || date.isBefore(tempStart!)) {
+                  tempStart = date;
+                  tempEnd = null;
+                  visibleMonth = DateTime(date.year, date.month, 1);
+                  return;
+                }
+
+                final selectedDays = onlyDate(date).difference(onlyDate(tempStart!)).inDays + 1;
+                if (selectedDays > maxSelectableDays) {
+                  rangeWarning = 'Ch\u1ec9 \u0111\u01b0\u1ee3c ch\u1ecdn t\u1ed1i \u0111a $maxSelectableDays ng\u00e0y';
+                  return;
+                }
+
+                tempEnd = date;
+              });
+            }
+
+            Widget dayCell(DateTime? date) {
+              if (date == null) return const SizedBox(height: 46);
+
+              final disabled = date.isAfter(safeToday);
+              final selectedStart = isSelectedStart(date);
+              final selectedEnd = isSelectedEnd(date);
+              final inRange = isInSelectedRange(date);
+              final isToday = sameDay(date, safeToday);
+              final selected = selectedStart || selectedEnd;
+
+              return GestureDetector(
+                onTap: disabled ? null : () => selectDate(date),
+                child: Container(
+                  height: 46,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? const Color(0xFFF04B32)
+                        : (inRange ? const Color(0xFFFFF0EE) : Colors.transparent),
+                    borderRadius: BorderRadius.circular(selected ? 2 : 0),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (isToday && !selected)
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: const BoxDecoration(color: Color(0xFFF3F3F3)),
+                        ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (isToday && !selected)
+                            const Text(
+                              'H\u00f4m nay',
+                              style: TextStyle(color: Color(0xFFBDBDBD), fontSize: 9),
+                            ),
+                          Text(
+                            '${date.day}',
+                            style: TextStyle(
+                              color: selected
+                                  ? Colors.white
+                                  : (disabled ? const Color(0xFFC8C8C8) : const Color(0xFF444444)),
+                              fontSize: 17,
+                              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (selectedStart)
+                        const Positioned(
+                          top: 4,
+                          child: Text('T\u1eeb', style: TextStyle(color: Colors.white, fontSize: 9)),
+                        ),
+                      if (selectedEnd)
+                        const Positioned(
+                          top: 4,
+                          child: Text('\u0110\u1ebfn', style: TextStyle(color: Colors.white, fontSize: 9)),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            final hasValidRange = tempStart != null && tempEnd != null;
+            final selectedText = rangeWarning ??
+                (hasValidRange
+                    ? "T\u1eeb: ${DateFormat('dd-MM-yyyy').format(tempStart!)}        \u0110\u1ebfn: ${DateFormat('dd-MM-yyyy').format(tempEnd!)}"
+                    : '\u0110\u00e3 ch\u1ecdn  Vui l\u00f2ng ch\u1ecdn');
+
+            return Container(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.86),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              maxSelectableDays == 1
+                                  ? 'Ch\u1ecdn 1 ng\u00e0y'
+                                  : (maxSelectableDays == 7
+                                      ? 'Ch\u1ecdn 1 tu\u1ea7n'
+                                      : 'Ch\u1ecdn ng\u00e0y t\u00f9y ch\u1ec9nh'),
+                              style: const TextStyle(
+                                color: Color(0xFF333333),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text(
+                              'H\u1ee7y',
+                              style: TextStyle(
+                                color: Color(0xFF666666),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 12, 4, 4),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chevron_left, color: Color(0xFF777777), size: 30),
+                            onPressed: () {
+                              setSheetState(() {
+                                visibleMonth = DateTime(visibleMonth.year, visibleMonth.month - 1, 1);
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: Text(
+                              "Th${visibleMonth.month.toString().padLeft(2, '0')} ${visibleMonth.year}",
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.chevron_right,
+                              color: visibleMonth.year == safeToday.year && visibleMonth.month == safeToday.month
+                                  ? const Color(0xFFD0D0D0)
+                                  : const Color(0xFF777777),
+                              size: 30,
+                            ),
+                            onPressed: visibleMonth.year == safeToday.year && visibleMonth.month == safeToday.month
+                                ? null
+                                : () {
+                                    setSheetState(() {
+                                      visibleMonth = DateTime(visibleMonth.year, visibleMonth.month + 1, 1);
+                                    });
+                                  },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Row(
+                        children: const [
+                          _WeekdayLabel('CN'),
+                          _WeekdayLabel('T2'),
+                          _WeekdayLabel('T3'),
+                          _WeekdayLabel('T4'),
+                          _WeekdayLabel('T5'),
+                          _WeekdayLabel('T6'),
+                          _WeekdayLabel('T7'),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      child: Column(
+                        children: List.generate(rowCount, (row) {
+                          return Row(
+                            children: List.generate(7, (col) {
+                              final cellIndex = row * 7 + col;
+                              final dayNumber = cellIndex - leadingEmptyCells + 1;
+                              final date = dayNumber < 1 || dayNumber > monthEnd.day
+                                  ? null
+                                  : DateTime(visibleMonth.year, visibleMonth.month, dayNumber);
+                              return Expanded(child: dayCell(date));
+                            }),
+                          );
+                        }),
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          selectedText,
+                          style: TextStyle(
+                            color: hasValidRange && rangeWarning == null ? const Color(0xFF555555) : const Color(0xFFE24A34),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 46,
+                        child: ElevatedButton(
+                          onPressed: hasValidRange
+                              ? () => Navigator.pop(
+                                    context,
+                                    DateTimeRange(start: tempStart!, end: tempEnd!),
+                                  )
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF04B32),
+                            disabledBackgroundColor: const Color(0xFFE8E8E8),
+                            foregroundColor: Colors.white,
+                            disabledForegroundColor: const Color(0xFFBBBBBB),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+                          ),
+                          child: const Text('X\u00e1c nh\u1eadn', style: TextStyle(fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      selectedFilter = filter;
+      selectedDateRange = picked;
+    });
+    fetchRevenueReport();
+  }
+
+  String get reportTitle {
+    if (selectedDateRange != null) {
+      final start = DateFormat('dd/MM/yyyy').format(selectedDateRange!.start);
+      final end = DateFormat('dd/MM/yyyy').format(selectedDateRange!.end);
+      return 'T\u1eeb $start \u0111\u1ebfn $end';
+    }
+    return selectedFilter;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,9 +433,9 @@ class _RevenueReportScreenState extends State<RevenueReportScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildMainFilterTab('Ngày'),
-                _buildMainFilterTab('Tuần'),
-                _buildMainFilterTab('Tháng'),
+                _buildMainFilterTab('Ng\u00e0y'),
+                _buildMainFilterTab('Tu\u1ea7n'),
+                _buildMainFilterTab('T\u00f9y ch\u1ec9nh'),
               ],
             ),
           ),
@@ -122,7 +454,7 @@ class _RevenueReportScreenState extends State<RevenueReportScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Tổng Doanh Thu ($selectedFilter)", style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                      Text("Tổng Doanh Thu ($reportTitle)", style: const TextStyle(color: Colors.white70, fontSize: 14)),
                       const SizedBox(height: 8),
                       Text("${formatMoney(totalRevenue)} đ", style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
                       const Divider(color: Colors.white24, height: 25),
@@ -141,7 +473,10 @@ class _RevenueReportScreenState extends State<RevenueReportScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text("Chi Tiết Theo Thời Gian", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey[800])),
-                    const Icon(Icons.bar_chart, color: Color(0xFF1A237E)),
+                    IconButton(
+                            icon: const Icon(Icons.date_range, color: Color(0xFF1A237E)),
+                            onPressed: () => _openPickerForFilter(selectedFilter),
+                          ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -195,15 +530,22 @@ class _RevenueReportScreenState extends State<RevenueReportScreen> {
     );
   }
 
+  void _openPickerForFilter(String title) {
+    if (title == 'Ng\u00e0y') {
+      _pickDateRange(filter: title, maxDays: 1);
+      return;
+    }
+    if (title == 'Tu\u1ea7n') {
+      _pickDateRange(filter: title, maxDays: 7);
+      return;
+    }
+    _pickDateRange(filter: title, maxDays: 366);
+  }
+
   Widget _buildMainFilterTab(String title) {
     bool isSelected = selectedFilter == title;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedFilter = title;
-          fetchRevenueReport();
-        });
-      },
+      onTap: () => _openPickerForFilter(title),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         decoration: BoxDecoration(color: isSelected ? const Color(0xFF1A237E) : Colors.grey[100], borderRadius: BorderRadius.circular(20)),
@@ -216,6 +558,31 @@ class _RevenueReportScreenState extends State<RevenueReportScreen> {
 // ============================================================================
 // 🌟 MÀN HÌNH 1: DANH SÁCH ĐƠN HÀNG TRONG NGÀY (ĐÃ SỬA LỖI MÚI GIỜ)
 // ============================================================================
+class _WeekdayLabel extends StatelessWidget {
+  final String label;
+
+  const _WeekdayLabel(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: SizedBox(
+        height: 30,
+        child: Center(
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF9E9E9E),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class OrderListByDateScreen extends StatefulWidget {
   final String date;
   const OrderListByDateScreen({super.key, required this.date});

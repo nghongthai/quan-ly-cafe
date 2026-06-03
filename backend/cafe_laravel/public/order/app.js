@@ -406,13 +406,3 @@ const App = {
 };
 
 document.addEventListener('DOMContentLoaded', () => App.init());
-
-//Bàn 2:  https://stingy-open-grader.ngrok-free.dev/order/index.html?table=2
-//Bàn 3:  https://stingy-open-grader.ngrok-free.dev/order/index.html?table=3
-//Bàn 4:  https://stingy-open-grader.ngrok-free.dev/order/index.html?table=4
-//Bàn 5:  https://stingy-open-grader.ngrok-free.dev/order/index.html?table=5
-//Bàn 6:  https://stingy-open-grader.ngrok-free.dev/order/index.html?table=6
-//Bàn 7:  https://stingy-open-grader.ngrok-free.dev/order/index.html?table=7
-//Bàn 8:  https://stingy-open-grader.ngrok-free.dev/order/index.html?table=8
-//Bàn 9:  https://stingy-open-grader.ngrok-free.dev/order/index.html?table=9
-///Bàn 10: https://stingy-open-grader.ngrok-free.dev/order/index.html?table=10//

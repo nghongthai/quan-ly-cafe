@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:quan_ly_cafe/screens/api_constants.dart';
+import 'package:quan_ly_cafe/screens/order_detail_screen.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
   @override
@@ -97,7 +98,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     String tableName = order['table'] != null ? order['table']['name'].toString() : "N/A";
 
     // 🌟 PHƯƠNG THỨC THANH TOÁN (Giữ nguyên logic cũ, thêm hiển thị)
-    String paymentMethod = order['payment_method'] ?? 'Tiền mặt';
+    final isPaid = (order['status'] ?? '').toString().trim().toLowerCase() == 'completed';
+    final paymentMethod = isPaid
+        ? (order['payment_method'] ?? 'Ti\u1ec1n m\u1eb7t').toString()
+        : 'Ch\u01b0a thanh to\u00e1n';
 
     return InkWell(
       onTap: () {
@@ -162,33 +166,3 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 }
 
 // 🌟 MÀN HÌNH CHI TIẾT ĐƠN HÀNG (Giữ nguyên cấu trúc)
-class OrderDetailScreen extends StatelessWidget {
-  final dynamic order;
-  const OrderDetailScreen({super.key, required this.order});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Chi tiết đơn #${order['id']}")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            ListTile(title: const Text("Phương thức thanh toán"), trailing: Text(order['payment_method'] ?? "Tiền mặt", style: const TextStyle(fontWeight: FontWeight.bold))),
-            const Divider(),
-            Expanded(
-              child: ListView.builder(
-                itemCount: order['order_details']?.length ?? 0,
-                itemBuilder: (context, index) {
-                  final item = order['order_details'][index];
-                  return ListTile(title: Text(item['product']?['name'] ?? "Món ăn"), trailing: Text("x${item['quantity']}"));
-                },
-              ),
-            ),
-            Text("Tổng cộng: ${order['total_amount']}đ", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
-}

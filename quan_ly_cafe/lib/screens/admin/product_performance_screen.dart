@@ -176,14 +176,28 @@ class _ProductPerformanceScreenState extends State<ProductPerformanceScreen> {
                       const SizedBox(width: 12),
 
                       // Ảnh / Icon đại diện món ăn thức uống
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.blue[50],
-                          borderRadius: BorderRadius.circular(8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          "assets/images/${product['image'] ?? ''}",
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.local_drink,
+                                color: Color(0xFF3B67D1),
+                              ),
+                            );
+                          },
                         ),
-                        child: const Icon(Icons.local_drink, color: Color(0xFF3B67D1)),
                       ),
                       const SizedBox(width: 15),
 

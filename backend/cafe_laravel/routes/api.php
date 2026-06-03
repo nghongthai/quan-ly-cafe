@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SePayWebhookController;
 use App\Models\Table;
 
 // --- 1. AUTHENTICATION ---
@@ -46,9 +47,11 @@ Route::get('/products', [OrderController::class, 'getProducts']);
 // --- 5. ORDERS ---
 Route::get('/list-orders', [OrderController::class, 'listOrders']); 
 Route::get('/order/table/{tableId}', [OrderController::class, 'getOrderByTable']); 
+Route::get('/order/{orderId}/payment-status', [OrderController::class, 'paymentStatus']);
 Route::post('/order/add-product', [OrderController::class, 'addProduct']);
 Route::post('/order/checkout', [OrderController::class, 'checkout']); 
 Route::post('/order/update-item', [OrderController::class, 'updateOrderDetail']);
+Route::post('/sepay/webhook', [SePayWebhookController::class, 'handle']);
 Route::get('/me/{id}', [UserController::class, 'show']);
 Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
 Route::get('/dashboard/revenue-report', [DashboardController::class, 'getRevenueReport']);

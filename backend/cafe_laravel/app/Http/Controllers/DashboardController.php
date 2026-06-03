@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use App\Models\Table;
 use App\Models\OrderDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,12 +24,10 @@ class DashboardController extends Controller
             $ordersCount = Order::where('status', 'completed')
                 ->count();
 
-            // Số bàn đang có khách 
-            $activeTables = Table::where(function($query) {
-                $query->where('status', 'occupied')
-                      ->orWhere('status', '1')
-                      ->orWhere('status', 1);
-            })->count();
+            // So ban dang hoat dong: co don hang dang cho xu ly.
+            $activeTables = Order::where('status', 'pending')
+                ->distinct('table_id')
+                ->count('table_id');
 
             // Top 3 sản phẩm bán chạy nhất toàn thời gian
             $topProducts = OrderDetail::select('product_id', DB::raw('SUM(quantity) as sold'))
@@ -83,7 +80,61 @@ class DashboardController extends Controller
             // Khởi tạo Base Query gốc cho các đơn hàng đã hoàn thành
             $baseQuery = Order::where('status', 'completed');
 
-            if ($type == 'ngày') {
+            if ($type == 'custom') {
+                $startDate = $request->query('start_date');
+                $endDate = $request->query('end_date');
+
+                if (!$startDate || !$endDate) {
+                    return response()->json([
+                        'error' => 'Thieu start_date hoac end_date'
+                    ], 422);
+                }
+
+                $start = Carbon::parse($startDate, 'Asia/Ho_Chi_Minh')->startOfDay();
+                $end = Carbon::parse($endDate, 'Asia/Ho_Chi_Minh')->endOfDay();
+
+                if ($start->gt($end)) {
+                    [$start, $end] = [$end->copy()->startOfDay(), $start->copy()->endOfDay()];
+                }
+
+                $totalRevenue = (double) (clone $baseQuery)
+                    ->whereBetween('created_at', [$start, $end])
+                    ->sum('total_amount');
+
+                $totalOrders = (int) (clone $baseQuery)
+                    ->whereBetween('created_at', [$start, $end])
+                    ->count();
+
+                $daysData = Order::select(
+                        DB::raw('DATE(created_at) as order_date'),
+                        DB::raw('SUM(total_amount) as revenue'),
+                        DB::raw('COUNT(*) as orders')
+                    )
+                    ->where('status', 'completed')
+                    ->whereBetween('created_at', [$start, $end])
+                    ->groupBy('order_date')
+                    ->orderBy('order_date', 'asc')
+                    ->get()
+                    ->keyBy('order_date');
+
+                $currentDay = $start->copy()->startOfDay();
+                $lastDay = $end->copy()->startOfDay();
+
+                while ($currentDay->lte($lastDay)) {
+                    $dayStr = $currentDay->format('Y-m-d');
+                    $item = $daysData->get($dayStr);
+
+                    $details[] = [
+                        'time' => $currentDay->format('d/m/Y'),
+                        'revenue' => $item ? (double) $item->revenue : 0,
+                        'orders' => $item ? (int) $item->orders : 0,
+                        'date' => $dayStr,
+                    ];
+
+                    $currentDay->addDay();
+                }
+
+            } else if ($type == 'ngày') {
                 $today = Carbon::now('Asia/Ho_Chi_Minh')->format('Y-m-d');
 
                 $totalRevenue = (double) (clone $baseQuery)->whereDate('created_at', $today)->sum('total_amount');

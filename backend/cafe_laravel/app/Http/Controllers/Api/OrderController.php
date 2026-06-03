@@ -3,51 +3,48 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Order;
-use App\Models\Table;
-use App\Models\Product;
 use App\Models\OrderDetail;
+use App\Models\Product;
+use App\Models\Table;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
-    // 1. Lấy danh sách món ăn cho Menu
     public function getProducts()
     {
-        $products = Product::all(); // Lấy tất cả để tránh thiếu món trên Flutter
-        return response()->json($products);
+        return response()->json(Product::all());
     }
 
-    // 2. Lấy đơn hàng hiện tại của 1 bàn
     public function getOrderByTable($tableId)
     {
         $order = Order::with(['table', 'orderDetails.product'])
-                      ->where('table_id', $tableId)
-                      ->where('status', 'pending')
-                      ->first();
+            ->where('table_id', $tableId)
+            ->where('status', 'pending')
+            ->first();
 
         if (!$order) {
             return response()->json([
-                'success' => false, 
-                'message' => 'Bàn này hiện đang trống',
-                'data' => null
+                'success' => false,
+                'message' => 'Ban nay hien dang trong',
+                'data' => null,
             ]);
         }
 
         return response()->json([
-            'success' => true, 
-            'data' => $order
+            'success' => true,
+            'data' => $order,
         ]);
     }
 
-    // 3. Thêm món mới từ Menu
     public function addProduct(Request $request)
     {
         $request->validate([
             'table_id' => 'required|exists:tables,id',
             'product_id' => 'required|exists:products,id',
-            'quantity' => 'nullable|integer|min:1'
+            'quantity' => 'nullable|integer|min:1',
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -56,116 +53,201 @@ class OrderController extends Controller
                 ['total_amount' => 0]
             );
 
-            // Cập nhật trạng thái bàn sang "Sử dụng" (1)
             Table::where('id', $request->table_id)->update(['status' => 1]);
 
             $product = Product::findOrFail($request->product_id);
-            $qty = $request->quantity ?? 1;
+            $quantity = $request->quantity ?? 1;
 
             $detail = OrderDetail::where('order_id', $order->id)
-                                ->where('product_id', $product->id)->first();
+                ->where('product_id', $product->id)
+                ->first();
 
             if ($detail) {
-                $detail->increment('quantity', $qty);
+                $detail->increment('quantity', $quantity);
             } else {
                 OrderDetail::create([
                     'order_id' => $order->id,
                     'product_id' => $product->id,
-                    'quantity' => $qty,
+                    'quantity' => $quantity,
                     'price' => $product->price,
                 ]);
             }
 
             $this->updateTotalAmount($order);
-            return response()->json(['success' => true, 'message' => 'Đã thêm món']);
+
+            return response()->json(['success' => true, 'message' => 'Da them mon']);
         });
     }
 
-    // 4. Cập nhật số lượng (Cộng, Trừ, Xóa)
     public function updateOrderDetail(Request $request)
     {
         $request->validate([
             'table_id' => 'required',
             'product_id' => 'required',
-            'action' => 'required|in:increment,decrement,delete'
+            'action' => 'required|in:increment,decrement,delete',
         ]);
 
         return DB::transaction(function () use ($request) {
             $order = Order::where('table_id', $request->table_id)
-                          ->where('status', 'pending')
-                          ->first();
+                ->where('status', 'pending')
+                ->first();
 
             if (!$order) {
-                return response()->json(['success' => false, 'message' => 'Không tìm thấy đơn'], 404);
+                return response()->json(['success' => false, 'message' => 'Khong tim thay don'], 404);
             }
 
             $detail = OrderDetail::where('order_id', $order->id)
-                                ->where('product_id', $request->product_id)
-                                ->first();
+                ->where('product_id', $request->product_id)
+                ->first();
 
             if ($detail) {
-                if ($request->action == 'increment') {
+                if ($request->action === 'increment') {
                     $detail->increment('quantity');
-                } 
-                elseif ($request->action == 'decrement') {
-                    if ($detail->quantity > 1) {
-                        $detail->decrement('quantity');
-                    } else {
-                        $detail->delete();
-                    }
-                } 
-                elseif ($request->action == 'delete') {
+                } elseif ($request->action === 'decrement') {
+                    $detail->quantity > 1 ? $detail->decrement('quantity') : $detail->delete();
+                } elseif ($request->action === 'delete') {
                     $detail->delete();
                 }
 
-                if ($order->orderDetails()->count() == 0) {
+                if ($order->orderDetails()->count() === 0) {
                     $order->delete();
                     Table::where('id', $request->table_id)->update(['status' => 0]);
-                    return response()->json(['success' => true, 'message' => 'Bàn trống', 'data' => null]);
+
+                    return response()->json(['success' => true, 'message' => 'Ban trong', 'data' => null]);
                 }
 
                 $this->updateTotalAmount($order);
             }
 
-            return response()->json(['success' => true, 'message' => 'Cập nhật thành công']);
+            return response()->json(['success' => true, 'message' => 'Cap nhat thanh cong']);
         });
     }
 
-    // 5. Thanh toán (PHẦN QUAN TRỌNG NHẤT)
     public function checkout(Request $request)
-{
-    // 🌟 ĐÃ CẬP NHẬT: Thêm kiểm tra dữ liệu payment_method gửi lên (nếu không truyền mặc định là Tiền mặt)
-    $request->validate([
-        'table_id' => 'required|exists:tables,id',
-        'payment_method' => 'nullable|string'
-    ]);
+    {
+        $request->validate([
+            'table_id' => 'required|exists:tables,id',
+            'payment_method' => 'nullable|string',
+        ]);
 
-    return DB::transaction(function () use ($request) {
-        $order = Order::where('table_id', $request->table_id)
-                      ->where('status', 'pending')->first();
+        return DB::transaction(function () use ($request) {
+            $order = Order::where('table_id', $request->table_id)
+                ->where('status', 'pending')
+                ->first();
 
-        if ($order) {
-            // 🌟 SỬA TẠI ĐÂY: Thêm 'payment_method' vào mảng update để lưu xuống database
-            $order->update([
-                'status' => 'completed',
-                'updated_at' => now(),
-                'payment_method' => $request->input('payment_method', 'Tiền mặt') // Ăn theo dữ liệu nút bấm từ Flutter gửi sang
+            if (!$order) {
+                return response()->json(['success' => false, 'message' => 'Khong tim thay don'], 404);
+            }
+
+            $this->completeOrder($order, $request->input('payment_method', 'Tiền mặt'));
+
+            return response()->json(['success' => true, 'message' => 'Thanh toan hoan tat']);
+        });
+    }
+
+    public function paymentStatus($orderId)
+    {
+        $order = Order::find($orderId);
+
+        if (!$order) {
+            return response()->json(['success' => false, 'status' => 'not_found'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => $order->status,
+            'payment_method' => $order->payment_method,
+            'sepay_code' => $this->paymentCodeForOrder($order),
+            'paid_at' => $order->paid_at,
+        ]);
+    }
+
+    public function sepayWebhook(Request $request)
+    {
+        $apiKey = config('services.sepay.api_key');
+
+        if (!empty($apiKey)) {
+            $expectedAuth = 'Apikey ' . $apiKey;
+            $actualAuth = $request->header('Authorization', '');
+
+            if (!hash_equals($expectedAuth, $actualAuth)) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+        }
+
+        $data = $request->all();
+        $transactionId = isset($data['id']) ? (string) $data['id'] : null;
+
+        if (empty($transactionId)) {
+            return response()->json(['success' => false, 'message' => 'Missing transaction id'], 422);
+        }
+
+        $inserted = DB::table('sepay_webhook_logs')->insertOrIgnore([
+            'transaction_id' => $transactionId,
+            'payload' => json_encode($data, JSON_UNESCAPED_UNICODE),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        if ($inserted === 0) {
+            return response()->json(['success' => true, 'message' => 'Already processed']);
+        }
+
+        if (($data['transferType'] ?? '') !== 'in') {
+            return response()->json(['success' => true, 'message' => 'Ignored non-incoming transfer']);
+        }
+
+        $paymentCode = $this->extractSepayCode($data);
+        $transferAmount = (float) ($data['transferAmount'] ?? 0);
+
+        if (!$paymentCode || $transferAmount <= 0) {
+            return response()->json(['success' => true, 'message' => 'No matched payment code']);
+        }
+
+        $order = Order::where('sepay_code', $paymentCode)->first();
+
+        if (!$order && preg_match('/^CAFE(\d+)$/', $paymentCode, $matches)) {
+            $order = Order::find((int) $matches[1]);
+        }
+
+        if (!$order) {
+            Log::warning('SePay webhook did not match any order', [
+                'transaction_id' => $transactionId,
+                'payment_code' => $paymentCode,
             ]);
 
-            // Trả bàn về trạng thái trống (0)
-            Table::where('id', $request->table_id)->update(['status' => 0]);
-
-            return response()->json(['success' => true, 'message' => 'Thanh toán hoàn tất']);
+            return response()->json(['success' => true, 'message' => 'Order not found']);
         }
-        return response()->json(['success' => false, 'message' => 'Không tìm thấy đơn'], 404);
-    });
-}
-    // 6. Lọc danh sách đơn hàng
+
+        if ($order->status === 'pending' && (float) $order->total_amount <= $transferAmount) {
+            DB::transaction(function () use ($order, $paymentCode, $transactionId) {
+                $order->refresh();
+
+                if ($order->status !== 'pending') {
+                    return;
+                }
+
+                $order->update([
+                    'status' => 'completed',
+                    'payment_method' => 'Chuyển khoản',
+                    'sepay_code' => $paymentCode,
+                    'sepay_transaction_id' => $transactionId,
+                    'paid_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                Table::where('id', $order->table_id)->update(['status' => 0]);
+            });
+        }
+
+        return response()->json(['success' => true]);
+    }
+
     public function listOrders(Request $request)
     {
         $status = $request->input('status');
-        $filter = $request->input('filter'); 
-        
+        $filter = $request->input('filter');
+
         $query = Order::with(['table', 'orderDetails.product']);
 
         if ($request->filled('status') && $status !== 'all') {
@@ -173,28 +255,57 @@ class OrderController extends Controller
         }
 
         if ($request->filled('filter')) {
-            if ($filter == 'today') {
-                $query->whereDate('updated_at', date('Y-m-d')); 
-            } elseif ($filter == 'week') {
+            if ($filter === 'today') {
+                $query->whereDate('updated_at', date('Y-m-d'));
+            } elseif ($filter === 'week') {
                 $query->whereBetween('updated_at', [
-                    now()->startOfWeek(), 
-                    now()->endOfWeek()
-                ]); 
+                    now()->startOfWeek(),
+                    now()->endOfWeek(),
+                ]);
             }
         }
 
         $orders = $query->orderBy('updated_at', 'desc')->get();
 
         return response()->json([
-            'success' => true, 
-            'data' => $orders
+            'success' => true,
+            'data' => $orders,
         ]);
     }
 
-    // 7. Hàm tính lại tiền
-    private function updateTotalAmount($order)
+    private function updateTotalAmount(Order $order): void
     {
         $total = $order->orderDetails()->sum(DB::raw('quantity * price'));
         $order->update(['total_amount' => $total]);
+    }
+
+    private function completeOrder(Order $order, string $paymentMethod): void
+    {
+        $order->update([
+            'status' => 'completed',
+            'updated_at' => now(),
+            'payment_method' => $paymentMethod,
+            'paid_at' => now(),
+        ]);
+
+        Table::where('id', $order->table_id)->update(['status' => 0]);
+    }
+
+    private function paymentCodeForOrder(Order $order): string
+    {
+        return $order->sepay_code ?: 'CAFE' . $order->id;
+    }
+
+    private function extractSepayCode(array $data): ?string
+    {
+        foreach (['code', 'content', 'description'] as $field) {
+            $value = (string) ($data[$field] ?? '');
+
+            if (preg_match('/CAFE\d+/i', $value, $matches)) {
+                return strtoupper($matches[0]);
+            }
+        }
+
+        return null;
     }
 }

@@ -14,6 +14,9 @@ class Order extends Model
         'total_amount',
         'status',
         'payment_method', // 'cash', 'card', 'online'
+        'sepay_code',
+        'sepay_transaction_id',
+        'paid_at',
     ];
 
     /**
