@@ -4,26 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:quan_ly_cafe/screens/api_constants.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
-  final TextEditingController _nameController = TextEditingController();
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _handleRegister() async {
-    if (_nameController.text.trim().isEmpty ||
-        _emailController.text.trim().isEmpty ||
+  Future<void> _resetPassword() async {
+    if (_emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty ||
         _confirmPasswordController.text.isEmpty) {
-      _showSnackBar('Vui l\u00f2ng \u0111i\u1ec1n \u0111\u1ea7y \u0111\u1ee7 th\u00f4ng tin');
+      _showSnackBar('Vui l\u00f2ng nh\u1eadp \u0111\u1ea7y \u0111\u1ee7 th\u00f4ng tin');
       return;
     }
 
@@ -33,7 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (_passwordController.text.length < 6) {
-      _showSnackBar('M\u1eadt kh\u1ea9u ph\u1ea3i c\u00f3 \u00edt nh\u1ea5t 6 k\u00fd t\u1ef1');
+      _showSnackBar('M\u1eadt kh\u1ea9u m\u1edbi ph\u1ea3i c\u00f3 \u00edt nh\u1ea5t 6 k\u00fd t\u1ef1');
       return;
     }
 
@@ -46,22 +44,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("${ApiConstants.baseUrl}/register"),
+        Uri.parse("${ApiConstants.baseUrl}/forgot-password"),
         headers: {"Accept": "application/json"},
         body: {
-          'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
           'password': _passwordController.text,
+          'password_confirmation': _confirmPasswordController.text,
         },
       );
 
       final data = json.decode(response.body);
-
-      if (response.statusCode == 201 || data['status'] == 'success') {
-        _showSnackBar('\u0110\u0103ng k\u00fd th\u00e0nh c\u00f4ng, h\u00e3y \u0111\u0103ng nh\u1eadp');
+      if (response.statusCode == 200 && data['status'] == 'success') {
+        _showSnackBar('C\u1eadp nh\u1eadt m\u1eadt kh\u1ea9u th\u00e0nh c\u00f4ng');
         if (mounted) Navigator.pop(context);
       } else {
-        _showSnackBar(data['message'] ?? '\u0110\u0103ng k\u00fd th\u1ea5t b\u1ea1i');
+        _showSnackBar(data['message'] ?? 'Kh\u00f4ng th\u1ec3 \u0111\u1ed5i m\u1eadt kh\u1ea9u');
       }
     } catch (_) {
       _showSnackBar('Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i \u0111\u1ebfn m\u00e1y ch\u1ee7');
@@ -78,7 +75,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -95,22 +91,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
         iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'T\u1ea1o t\u00e0i kho\u1ea3n',
+              'Qu\u00ean m\u1eadt kh\u1ea9u',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
-              'D\u00f9ng email \u0111\u1ec3 \u0111\u0103ng nh\u1eadp v\u00e0o h\u1ec7 th\u1ed1ng',
+              'Nh\u1eadp email t\u00e0i kho\u1ea3n v\u00e0 \u0111\u1eb7t l\u1ea1i m\u1eadt kh\u1ea9u m\u1edbi',
               style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 30),
-            _buildTextField(_nameController, 'H\u1ecd v\u00e0 t\u00ean', Icons.face_outlined),
-            const SizedBox(height: 16),
             _buildTextField(
               _emailController,
               'Email',
@@ -120,14 +114,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 16),
             _buildTextField(
               _passwordController,
-              'M\u1eadt kh\u1ea9u',
+              'M\u1eadt kh\u1ea9u m\u1edbi',
               Icons.lock_outline,
               isPassword: true,
             ),
             const SizedBox(height: 16),
             _buildTextField(
               _confirmPasswordController,
-              'Nh\u1eadp l\u1ea1i m\u1eadt kh\u1ea9u',
+              'Nh\u1eadp l\u1ea1i m\u1eadt kh\u1ea9u m\u1edbi',
               Icons.lock_reset,
               isPassword: true,
             ),
@@ -136,7 +130,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleRegister,
+                onPressed: _isLoading ? null : _resetPassword,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A237E),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -144,24 +138,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
-                        'T\u1ea1o t\u00e0i kho\u1ea3n',
+                        'C\u1eadp nh\u1eadt m\u1eadt kh\u1ea9u',
                         style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('B\u1ea1n \u0111\u00e3 c\u00f3 t\u00e0i kho\u1ea3n?'),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    '\u0110\u0103ng nh\u1eadp',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A237E)),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

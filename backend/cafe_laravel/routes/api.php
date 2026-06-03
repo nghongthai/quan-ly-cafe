@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\ShiftController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SePayWebhookController;
@@ -12,6 +13,8 @@ use App\Models\Table;
 // --- 1. AUTHENTICATION ---
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/change-password', [AuthController::class, 'changePassword']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
 // --- 2. QUẢN LÝ NHÂN VIÊN ---
@@ -52,7 +55,9 @@ Route::post('/order/add-product', [OrderController::class, 'addProduct']);
 Route::post('/order/checkout', [OrderController::class, 'checkout']); 
 Route::post('/order/update-item', [OrderController::class, 'updateOrderDetail']);
 Route::post('/sepay/webhook', [SePayWebhookController::class, 'handle']);
+Route::post('/shifts/close', [ShiftController::class, 'close']);
 Route::get('/me/{id}', [UserController::class, 'show']);
+Route::put('/profile/{id}', [UserController::class, 'updateProfile']);
 Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
 Route::get('/dashboard/revenue-report', [DashboardController::class, 'getRevenueReport']);
 // API lấy danh sách toàn bộ hóa đơn chi tiết của một ngày cụ thể

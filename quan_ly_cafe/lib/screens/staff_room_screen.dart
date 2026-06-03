@@ -66,6 +66,12 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
     }
   }
 
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
+  }
+
   void applyFilter(String status) {
     setState(() {
       filterStatus = status;
@@ -186,7 +192,7 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const EndOfDayReportScreen(),
+                    builder: (context) => EndOfDayReportScreen(userId: widget.userId),
                   ),
                 );
               }, // 🌟 ĐÃ SỬA: Chỗ này phải là }, chứ không phải là )

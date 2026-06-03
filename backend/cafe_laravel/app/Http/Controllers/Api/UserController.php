@@ -9,76 +9,102 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    // Lấy danh sách nhân viên để hiện lên App
     public function index()
     {
-        $users = User::all();
-        return response()->json($users);
+        return response()->json(User::all());
     }
 
-    // Xóa nhân viên theo ID
-    public function destroy($id)
-    {
-        $user = User::find($id);
-        if ($user) {
-            $user->delete();
-            return response()->json(['success' => true, 'message' => 'Đã xóa nhân viên']);
-        }
-        return response()->json(['success' => false, 'message' => 'Không tìm thấy'], 404);
-    }
-
-    // Thêm mới nhân viên / Quản trị viên
     public function store(Request $request)
     {
-        // ✅ Đã sửa validate từ 'username' thành 'email' để khớp với DB
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users,email',
             'password' => 'required|string|min:6',
-            'role' => 'required|string'
+            'role' => 'required|string',
         ]);
 
-        // ✅ Tạo user với trường 'email'
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password), // Dùng Hash::make đồng bộ với Seeder
+            'password' => Hash::make($request->password),
             'role' => $request->role,
-            'shift' => $request->shift ?? 'Chưa xếp ca', // Thêm trường ca làm việc dự phòng
+            'phone' => $request->phone,
+            'shift' => $request->shift ?? 'Chua xep ca',
         ]);
 
         return response()->json(['success' => true, 'data' => $user], 201);
     }
-    public function update(Request $request, $id)
-{
-    // Tìm nhân viên theo ID
-    $user = \App\Models\User::find($id); // Hoặc Model tương ứng của bạn (ví dụ: User)
 
-    if (!$user) {
-        return response()->json(['message' => 'Không tìm thấy nhân viên'], 404);
-    }
-
-    // Cập nhật vai trò mới từ Flutter gửi lên
-    if ($request->has('role')) {
-        $user->role = $request->input('role');
-    }
-
-    // Nếu Flutter có gửi thêm các thông tin khác muốn sửa thì bổ sung ở đây
-    $user->save(); 
-
-    return response()->json([
-        'message' => 'Cập nhật vai trò thành công',
-        'data' => $user
-    ], 200);
-}
-
-    // Xem chi tiết 1 nhân viên
     public function show($id)
     {
         $user = User::find($id);
-        if ($user) {
-            return response()->json($user);
+
+        if (!$user) {
+            return response()->json(['message' => 'Khong tim thay'], 404);
         }
-        return response()->json(['message' => 'Không tìm thấy'], 404);
+
+        return response()->json($user);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['message' => 'Khong tim thay nhan vien'], 404);
+        }
+
+        if ($request->has('role')) {
+            $user->role = $request->input('role');
+        }
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'Cap nhat vai tro thanh cong',
+            'data' => $user,
+        ], 200);
+    }
+
+    public function updateProfile(Request $request, $id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Khong tim thay nguoi dung',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:30',
+        ]);
+
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->phone = $validated['phone'] ?? null;
+        $user->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Cap nhat thong tin thanh cong',
+            'data' => $user,
+        ], 200);
+    }
+
+    public function destroy($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Khong tim thay'], 404);
+        }
+
+        $user->delete();
+
+        return response()->json(['success' => true, 'message' => 'Da xoa nhan vien']);
     }
 }

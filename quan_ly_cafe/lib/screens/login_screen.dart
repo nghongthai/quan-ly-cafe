@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:quan_ly_cafe/screens/api_constants.dart';
+import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import 'admin/admin_home.dart';
 import 'staff_room_screen.dart'; // 🌟 Đã sửa: Import đúng file sơ đồ bàn mới của nhân viên
@@ -163,7 +164,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ForgotPasswordScreen(),
+                        ),
+                      );
+                    },
                     child: const Text(
                       "Quên mật khẩu?",
                       style: TextStyle(color: Color(0xFF1A237E)),

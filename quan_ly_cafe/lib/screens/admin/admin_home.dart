@@ -7,10 +7,12 @@ import 'package:quan_ly_cafe/screens/api_constants.dart';
 // Import chuẩn xác theo cấu trúc dự án của bạn
 import 'package:quan_ly_cafe/screens/order_history_screen.dart';
 import 'package:quan_ly_cafe/screens/profile_screen.dart';
+import 'package:quan_ly_cafe/screens/change_password_screen.dart';
 import 'package:quan_ly_cafe/screens/admin/revenue_report_screen.dart';
 import 'package:quan_ly_cafe/screens/admin/product_performance_screen.dart'; // 🌟 Đã thêm import màn hình chi tiết hiệu suất sản phẩm mới
 import '../room_management.dart';
 import '../order_list_screen.dart';
+import '../order_detail_editable.dart';
 import '../staff_management_screen.dart';
 import '../role_management_screen.dart';
 import '../login_screen.dart';
@@ -222,7 +224,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       );
                     },
                   ),
-                  _buildMenuItem(Icons.history, "Lịch sử bàn giao ca"),
                   _buildMenuItem(
                     Icons.update,
                     "Lịch sử đơn hàng",
@@ -262,7 +263,19 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       );
                     },
                   ),
-                  _buildMenuItem(Icons.lock_reset, "Đổi mật khẩu"),
+                  _buildMenuItem(
+                    Icons.lock_reset,
+                    "\u0110\u1ed5i m\u1eadt kh\u1ea9u",
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ChangePasswordScreen(),
+                        ),
+                      );
+                    },
+                  ),
                   const Divider(),
                   _buildMenuItem(
                     Icons.logout,
@@ -313,7 +326,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Doanh thu tích lũy",
+                        "Doanh thu h\u00f4m nay",
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 14,
@@ -344,8 +357,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               Row(
                 children: [
                   _buildStatCard(
-                    "Số đơn hàng",
-                    ordersCount.toString(),
+                    "S\u1ed1 \u0111\u01a1n h\u00e0ng",
+                    "$ordersCount \u0111\u01a1n",
                     Icons.arrow_upward,
                     Colors.green,
                     onTap: () {
@@ -360,10 +373,18 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   const SizedBox(width: 15),
                   _buildStatCard(
                     "B\u00e0n \u0111ang ho\u1ea1t \u0111\u1ed9ng",
-                    activeTablesCount.toString(),
+                    "$activeTablesCount b\u00e0n",
                     null,
                     Colors.black,
                     subTitle: "C\u00f3 kh\u00e1ch / c\u00f3 \u0111\u01a1n",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ActiveTablesScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -374,7 +395,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    "Hiệu suất sản phẩm",
+                    "Top m\u00f3n h\u00f4m nay",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -417,7 +438,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   final item = topProducts[index];
                   return _buildProductItem(
                     item['name'] ?? "Sản phẩm",
-                    "Đã bán: ${item['sold']}",
+                    "H\u00f4m nay: ${item['sold']} ly",
                     item['image'] ?? '',
                   );
                 },
@@ -551,6 +572,149 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         style: TextStyle(color: color, fontWeight: FontWeight.w500),
       ),
       onTap: onTap,
+    );
+  }
+}
+
+class ActiveTablesScreen extends StatefulWidget {
+  const ActiveTablesScreen({super.key});
+
+  @override
+  State<ActiveTablesScreen> createState() => _ActiveTablesScreenState();
+}
+
+class _ActiveTablesScreenState extends State<ActiveTablesScreen> {
+  bool isLoading = true;
+  List<dynamic> activeTables = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchActiveTables();
+  }
+
+  Future<void> fetchActiveTables() async {
+    setState(() => isLoading = true);
+    try {
+      final response = await http.get(Uri.parse("${ApiConstants.baseUrl}/tables"));
+      if (response.statusCode == 200) {
+        final tables = json.decode(response.body) as List<dynamic>;
+        final filtered = tables.where((table) {
+          final status = table['status']?.toString().toLowerCase();
+          final activeOrder = table['active_order'] ?? table['current_order'];
+          return activeOrder != null || status == 'occupied' || status == '1';
+        }).toList();
+
+        if (mounted) {
+          setState(() {
+            activeTables = filtered;
+            isLoading = false;
+          });
+        }
+      } else if (mounted) {
+        setState(() => isLoading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  String _formatMoney(dynamic amount) {
+    final value = double.tryParse(amount.toString()) ?? 0;
+    return NumberFormat("###,###", "vi_VN").format(value);
+  }
+
+  String _tableName(dynamic table) {
+    final rawName = table['name'] ?? table['table_number'] ?? table['id'];
+    final name = rawName.toString();
+    return name.toLowerCase().contains('b\u00e0n') ? name : 'B\u00e0n $name';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FB),
+      appBar: AppBar(
+        title: const Text(
+          'B\u00e0n \u0111ang ho\u1ea1t \u0111\u1ed9ng',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        iconTheme: const IconThemeData(color: Colors.black),
+        actions: [
+          IconButton(
+            onPressed: fetchActiveTables,
+            icon: const Icon(Icons.refresh, color: Color(0xFF3B67D1)),
+          ),
+        ],
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF3B67D1)))
+          : activeTables.isEmpty
+              ? const Center(
+                  child: Text(
+                    'Hi\u1ec7n ch\u01b0a c\u00f3 b\u00e0n n\u00e0o \u0111ang d\u00f9ng',
+                    style: TextStyle(color: Colors.grey, fontSize: 15),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: fetchActiveTables,
+                  color: const Color(0xFF3B67D1),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: activeTables.length,
+                    itemBuilder: (context, index) {
+                      final table = activeTables[index];
+                      final activeOrder = table['active_order'] ?? table['current_order'];
+                      final totalAmount = activeOrder?['total_amount'] ?? table['total_amount'] ?? 0;
+                      final orderId = activeOrder?['id'];
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE7EAF0)),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          leading: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEAF2FF),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.table_restaurant, color: Color(0xFF3B67D1)),
+                          ),
+                          title: Text(
+                            _tableName(table),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          subtitle: Text(
+                            orderId == null
+                                ? 'B\u00e0n \u0111ang c\u00f3 kh\u00e1ch'
+                                : '\u0110\u01a1n #$orderId - ${_formatMoney(totalAmount)}\u0111',
+                            style: const TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
+                          trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                          onTap: activeOrder == null
+                              ? null
+                              : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OrderDetailEditableScreen(order: activeOrder),
+                                    ),
+                                  );
+                                },
+                        ),
+                      );
+                    },
+                  ),
+                ),
     );
   }
 }

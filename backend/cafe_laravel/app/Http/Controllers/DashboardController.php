@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\Shift;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -16,12 +17,15 @@ class DashboardController extends Controller
     public function getStats()
     {
         try {
+            $today = Carbon::now('Asia/Ho_Chi_Minh')->toDateString();
             // Doanh thu: Tổng số tiền của TẤT CẢ các đơn hàng đã hoàn thành
             $revenue = Order::where('status', 'completed')
+                ->whereDate('created_at', $today)
                 ->sum('total_amount');
 
             // Tổng số đơn hàng thành công từ trước tới nay
             $ordersCount = Order::where('status', 'completed')
+                ->whereDate('created_at', $today)
                 ->count();
 
             // So ban dang hoat dong: co don hang dang cho xu ly.
@@ -31,8 +35,9 @@ class DashboardController extends Controller
 
             // Top 3 sản phẩm bán chạy nhất toàn thời gian
             $topProducts = OrderDetail::select('product_id', DB::raw('SUM(quantity) as sold'))
-                ->whereHas('order', function($q) {
-                    $q->where('status', 'completed');
+                ->whereHas('order', function($q) use ($today) {
+                    $q->where('status', 'completed')
+                        ->whereDate('created_at', $today);
                 })
                 ->with('product')
                 ->groupBy('product_id')
@@ -338,9 +343,13 @@ class DashboardController extends Controller
             // Dùng cặp thời gian đầu ngày và cuối ngày chuẩn múi giờ Việt Nam để quét sạch đơn
             $startOfDay = Carbon::now('Asia/Ho_Chi_Minh')->startOfDay();
             $endOfDay = Carbon::now('Asia/Ho_Chi_Minh')->endOfDay();
+            $latestClosedShift = Shift::whereDate('end_time', Carbon::now('Asia/Ho_Chi_Minh')->toDateString())
+                ->latest('end_time')
+                ->first();
+            $reportStart = $latestClosedShift ? Carbon::parse($latestClosedShift->end_time) : $startOfDay;
 
             // Lọc chính xác các đơn hoàn thành trong khung giờ ngày hôm nay
-            $todayOrders = Order::whereBetween('created_at', [$startOfDay, $endOfDay])
+            $todayOrders = Order::whereBetween('created_at', [$reportStart, $endOfDay])
                                 ->where('status', 'completed')
                                 ->get();
 
