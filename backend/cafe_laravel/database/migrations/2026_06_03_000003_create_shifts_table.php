@@ -14,9 +14,13 @@ return new class extends Migration
             $table->dateTime('start_time')->nullable();
             $table->dateTime('end_time')->nullable();
             $table->decimal('opening_cash', 15, 2)->default(1000000);
+            $table->decimal('cash_revenue', 15, 2)->default(0);
+            $table->decimal('bank_revenue', 15, 2)->default(0);
             $table->decimal('closing_cash', 15, 2)->default(0);
             $table->decimal('total_revenue', 15, 2)->default(0);
             $table->unsignedInteger('total_orders')->default(0);
+            $table->unsignedInteger('total_products')->default(0);
+            $table->string('status')->default('open');
             $table->text('note')->nullable();
             $table->timestamps();
         });

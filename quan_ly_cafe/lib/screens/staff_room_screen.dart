@@ -40,6 +40,9 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
   void initState() {
     super.initState();
     fetchTables();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      checkCurrentShift();
+    });
   }
 
   String formatMoney(dynamic amount) {
@@ -64,6 +67,74 @@ class _StaffRoomScreenState extends State<StaffRoomScreen> {
     } finally {
       setState(() => isLoading = false);
     }
+  }
+
+  Future<void> checkCurrentShift() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/shifts/current?user_id=${widget.userId}"),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['has_open_shift'] == false && mounted) {
+          showOpenShiftDialog();
+        }
+      }
+    } catch (e) {
+      debugPrint('Loi kiem tra ca: $e');
+    }
+  }
+
+  Future<void> openShift(String openingCash) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/shifts/open"),
+        headers: {"Accept": "application/json"},
+        body: {
+          'user_id': widget.userId.toString(),
+          'opening_cash': openingCash.replaceAll('.', '').replaceAll(',', ''),
+        },
+      );
+      final data = json.decode(response.body);
+      if ((response.statusCode == 200 || response.statusCode == 201) && data['status'] == 'success') {
+        _showSnackBar('M\u1edf ca th\u00e0nh c\u00f4ng');
+      } else {
+        _showSnackBar(data['message'] ?? 'Kh\u00f4ng th\u1ec3 m\u1edf ca');
+        if (mounted) showOpenShiftDialog();
+      }
+    } catch (_) {
+      _showSnackBar('Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i \u0111\u1ebfn m\u00e1y ch\u1ee7');
+      if (mounted) showOpenShiftDialog();
+    }
+  }
+
+  void showOpenShiftDialog() {
+    final openingCashController = TextEditingController(text: '1000000');
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('M\u1edf ca'),
+        content: TextField(
+          controller: openingCashController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Ti\u1ec1n \u0111\u1ea7u ca',
+            prefixIcon: Icon(Icons.payments_outlined),
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openShift(openingCashController.text);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A237E)),
+            child: const Text('M\u1edf ca', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSnackBar(String message) {

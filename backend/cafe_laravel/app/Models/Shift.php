@@ -14,9 +14,13 @@ class Shift extends Model
         'start_time',
         'end_time',
         'opening_cash',
+        'cash_revenue',
+        'bank_revenue',
         'closing_cash',
         'total_revenue',
         'total_orders',
+        'total_products',
+        'status',
         'note',
     ];
 

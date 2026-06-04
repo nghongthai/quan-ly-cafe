@@ -8,6 +8,7 @@ import 'package:quan_ly_cafe/screens/api_constants.dart';
 import 'package:quan_ly_cafe/screens/order_history_screen.dart';
 import 'package:quan_ly_cafe/screens/profile_screen.dart';
 import 'package:quan_ly_cafe/screens/change_password_screen.dart';
+import 'package:quan_ly_cafe/screens/shift_history_screen.dart';
 import 'package:quan_ly_cafe/screens/admin/revenue_report_screen.dart';
 import 'package:quan_ly_cafe/screens/admin/product_performance_screen.dart'; // 🌟 Đã thêm import màn hình chi tiết hiệu suất sản phẩm mới
 import '../room_management.dart';
@@ -220,6 +221,19 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const OrderListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildMenuItem(
+                    Icons.history,
+                    "L\u1ecbch s\u1eed giao ca",
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ShiftHistoryScreen(),
                         ),
                       );
                     },
