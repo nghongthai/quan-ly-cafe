@@ -153,12 +153,39 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'status' => 'not_found'], 404);
         }
 
+        $paymentCode = $this->prepareOrderForSepay($order);
+
         return response()->json([
             'success' => true,
             'status' => $order->status,
             'payment_method' => $order->payment_method,
-            'sepay_code' => $this->paymentCodeForOrder($order),
+            'sepay_code' => $paymentCode,
             'paid_at' => $order->paid_at,
+        ]);
+    }
+
+    public function prepareSepayPayment(Request $request, $orderId)
+    {
+        $order = Order::find($orderId);
+
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Khong tim thay don'], 404);
+        }
+
+        if ($order->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Don nay da thanh toan hoac khong con cho xu ly',
+            ], 409);
+        }
+
+        $paymentCode = $this->prepareOrderForSepay($order);
+
+        return response()->json([
+            'success' => true,
+            'sepay_code' => $paymentCode,
+            'amount' => (float) $order->total_amount,
+            'payment_method' => $order->payment_method,
         ]);
     }
 
@@ -294,6 +321,20 @@ class OrderController extends Controller
     private function paymentCodeForOrder(Order $order): string
     {
         return $order->sepay_code ?: 'CAFE' . $order->id;
+    }
+
+    private function prepareOrderForSepay(Order $order): string
+    {
+        $paymentCode = $this->paymentCodeForOrder($order);
+
+        if ($order->sepay_code !== $paymentCode || $order->payment_method !== 'Chuyển khoản') {
+            $order->update([
+                'payment_method' => 'Chuyển khoản',
+                'sepay_code' => $paymentCode,
+            ]);
+        }
+
+        return $paymentCode;
     }
 
     private function extractSepayCode(array $data): ?string

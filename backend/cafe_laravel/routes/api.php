@@ -51,6 +51,7 @@ Route::get('/products', [OrderController::class, 'getProducts']);
 Route::get('/list-orders', [OrderController::class, 'listOrders']); 
 Route::get('/order/table/{tableId}', [OrderController::class, 'getOrderByTable']); 
 Route::get('/order/{orderId}/payment-status', [OrderController::class, 'paymentStatus']);
+Route::post('/order/{orderId}/sepay/prepare', [OrderController::class, 'prepareSepayPayment']);
 Route::post('/order/add-product', [OrderController::class, 'addProduct']);
 Route::post('/order/checkout', [OrderController::class, 'checkout']); 
 Route::post('/order/update-item', [OrderController::class, 'updateOrderDetail']);

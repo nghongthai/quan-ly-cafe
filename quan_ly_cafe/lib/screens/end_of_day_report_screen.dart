@@ -126,27 +126,209 @@ class _EndOfDayReportScreenState extends State<EndOfDayReportScreen> {
 
   void showOpenNewShiftDialog() {
     final openingCashController = TextEditingController(text: '1000000');
+    final now = DateTime.now();
+    final dateText = DateFormat('dd/MM/yyyy').format(now);
+    final startText = DateFormat('HH:mm - dd/MM/yyyy').format(now);
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('M\u1edf ca m\u1edbi'),
-        content: TextField(
-          controller: openingCashController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Ti\u1ec1n \u0111\u1ea7u ca',
-            prefixIcon: Icon(Icons.payments_outlined),
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F0FF),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.lock_open_rounded,
+                      color: Color(0xFF1E46A3),
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Mở ca mới',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                        SizedBox(height: 3),
+                        Text(
+                          'Ca trước đã đóng, mở ca mới để bán tiếp',
+                          style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F8FF),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE1EAFF)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Ca mới sẵn sàng bắt đầu',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _openShiftInfoRow(Icons.calendar_today_outlined, 'Hôm nay', dateText),
+                    const SizedBox(height: 10),
+                    _openShiftInfoRow(Icons.access_time_rounded, 'Thời gian bắt đầu', startText),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Tiền đầu ca',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: openingCashController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.payments_outlined, color: Color(0xFF1E46A3)),
+                  suffixText: 'đ',
+                  filled: true,
+                  fillColor: const Color(0xFFF9FAFB),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFF1E46A3), width: 1.4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Trước khi bán tiếp',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 10),
+              _openingChecklistRow(Icons.account_balance_wallet_outlined, 'Nhập đúng tiền mặt đầu ca mới'),
+              _openingChecklistRow(Icons.point_of_sale_outlined, 'Kiểm tra máy bán hàng đã sẵn sàng'),
+              _openingChecklistRow(Icons.receipt_long_outlined, 'Đơn mới sẽ được tính vào ca này'),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    openNewShift(openingCashController.text);
+                  },
+                  icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+                  label: const Text(
+                    'BẮT ĐẦU CA MỚI',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E46A3),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              openNewShift(openingCashController.text);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E46A3)),
-            child: const Text('M\u1edf ca', style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
+  Widget _openShiftInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF1E46A3)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF111827),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _openingChecklistRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F0FF),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, size: 16, color: const Color(0xFF1E46A3)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+            ),
           ),
         ],
       ),

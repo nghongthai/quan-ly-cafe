@@ -19,7 +19,7 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
   final TextEditingController _receivedMoneyController = TextEditingController();
 
   final String bankId = 'BIDV';
-  final String accountNo = '4880687152';
+  final String accountNo = '96247THAI200511';
   final String accountName = 'NGUYEN HONG THAI';
 
   bool isProcessing = false;
@@ -29,9 +29,11 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
   int receivedMoney = 0;
   String selectedPaymentMethod = 'Tiền mặt';
   String qrUrl = '';
+  String sepayPaymentCode = '';
   Timer? _paymentStatusTimer;
 
-  String get paymentCode => 'CAFE${widget.orderData['id']}';
+  String get paymentCode =>
+      sepayPaymentCode.isNotEmpty ? sepayPaymentCode : 'CAFE${widget.orderData['id']}';
 
   Future<void> processPayment() async {
     setState(() => isProcessing = true);
@@ -87,7 +89,54 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
     }
   }
 
-  void _generateSepayQr() {
+  Future<String?> _prepareSepayPayment() async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/order/${widget.orderData['id']}/sepay/prepare'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode == 200 && data['success'] == true) {
+        return data['sepay_code']?.toString();
+      }
+
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(data['message']?.toString() ?? 'Khong the tao ma thanh toan Sepay'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Khong the ket noi Sepay: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+
+    return null;
+  }
+
+  Future<void> _generateSepayQr() async {
+    setState(() {
+      isQrGenerated = false;
+      isWaitingSepay = true;
+      qrUrl = '';
+    });
+
+    final preparedCode = await _prepareSepayPayment();
+    if (!mounted) return;
+
+    if (preparedCode == null || preparedCode.isEmpty) {
+      setState(() => isWaitingSepay = false);
+      return;
+    }
+
+    sepayPaymentCode = preparedCode;
     final amount = double.parse(widget.orderData['total_amount'].toString()).toInt();
     final query = Uri(queryParameters: {
       'acc': accountNo,
@@ -456,6 +505,7 @@ class _PaymentStaffScreenState extends State<PaymentStaffScreen> {
               isQrGenerated = false;
               isWaitingSepay = false;
               qrUrl = '';
+              sepayPaymentCode = '';
               _paymentStatusTimer?.cancel();
             }
           });
